@@ -1,26 +1,449 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Base light theme */
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Base dark theme */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+
+  /* Day theme overrides */
+  .time-day {
+    --background: 210 40% 98%;
+    --foreground: 220 13% 18%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 18%;
+    --primary: 220 13% 18%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 220 13% 18%;
+    --accent-foreground: 0 0% 100%;
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 220 13% 18%;
+  }
+
+  /* Night theme overrides */
+  .time-night {
+    --background: 220 13% 18%;
+    --foreground: 0 0% 95%;
+    --card: 220 13% 18%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 13% 18%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 220 13% 18%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 220 13% 18%;
+    --muted: 215 25% 27%;
+    --muted-foreground: 0 0% 95%;
+    --accent: 0 0% 95%;
+    --accent-foreground: 220 13% 18%;
+    --border: 0 0% 95%;
+    --input: 0 0% 95%;
+    --ring: 0 0% 95%;
+  }
+
+  /* Combined dark + night theme */
+  .dark.time-night {
+    --background: 220 13% 18%;
+    --foreground: 0 0% 95%;
+    --card: 220 13% 18%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 13% 18%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 220 13% 18%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 220 13% 18%;
+    --muted: 215 25% 27%;
+    --muted-foreground: 0 0% 95%;
+    --accent: 0 0% 95%;
+    --accent-foreground: 220 13% 18%;
+    --border: 0 0% 95%;
+    --input: 0 0% 95%;
+    --ring: 0 0% 95%;
+  }
+
+  /* Combined light + day theme */
+  .time-day {
+    --background: 210 40% 98%;
+    --foreground: 220 13% 18%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 18%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 18%;
+    --primary: 220 13% 18%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 220 13% 18%;
+    --accent-foreground: 0 0% 100%;
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 220 13% 18%;
   }
 }
 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Text visibility utilities */
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .text-shadow-dark {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .text-overlay {
+    @apply relative;
+  }
+
+  .text-overlay::before {
+    content: "";
+    @apply absolute inset-0 bg-black/20 dark:bg-black/40;
+  }
+
+  .link-hover {
+    @apply transition-colors duration-200 hover:text-primary focus:text-primary focus:outline-none focus:underline;
+  }
+
+  .bg-muted {
+    @apply bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))];
+  }
+
+  .bg-muted-heading {
+    @apply bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] dark:bg-[hsl(var(--muted))] dark:text-[hsl(var(--foreground))];
+  }
+
+  .bg-muted-link {
+    @apply bg-[hsl(var(--muted))] text-[hsl(var(--primary))] hover:text-[hsl(var(--primary))] dark:bg-[hsl(var(--muted))] dark:text-[hsl(var(--primary))] dark:hover:text-[hsl(var(--primary))];
+  }
+
+  .bg-muted-code {
+    @apply bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] font-mono dark:bg-[hsl(var(--muted))] dark:text-[hsl(var(--muted-foreground))];
+  }
+
+  .bg-muted-light {
+    @apply bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))] dark:bg-[hsl(var(--muted))] dark:text-[hsl(var(--muted-foreground))];
+  }
+}
+
+/* Heading styles */
+@layer components {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight;
+  }
+
+  h1 {
+    @apply text-4xl md:text-5xl;
+  }
+
+  h2 {
+    @apply text-3xl md:text-4xl;
+  }
+
+  h3 {
+    @apply text-2xl md:text-3xl;
+  }
+
+  /* Link styles */
+  a {
+    @apply text-primary link-hover;
+  }
+}
+
+/* Blog Post Typography */
+.prose {
+  @apply max-w-none;
+}
+
+.prose h1 {
+  @apply text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl font-serif mb-8;
+}
+
+.prose h2 {
+  @apply text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-12 mb-6;
+}
+
+.prose h3 {
+  @apply text-2xl font-bold tracking-tight sm:text-3xl font-serif mt-10 mb-4;
+}
+
+.prose h4 {
+  @apply text-xl font-bold tracking-tight sm:text-2xl font-serif mt-8 mb-4;
+}
+
+.prose p {
+  @apply text-lg leading-relaxed mb-6;
+}
+
+.prose a {
+  @apply text-primary underline-offset-4 hover:underline;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-primary pl-4 italic my-8 text-lg;
+}
+
+.prose ul {
+  @apply list-disc list-inside mb-6;
+}
+
+.prose ol {
+  @apply list-decimal list-inside mb-6;
+}
+
+.prose li {
+  @apply mb-2;
+}
+
+.prose img {
+  @apply rounded-lg shadow-lg my-8;
+}
+
+.prose pre {
+  @apply bg-muted p-4 rounded-lg my-8 overflow-x-auto;
+}
+
+.prose code {
+  @apply bg-muted px-1.5 py-0.5 rounded text-sm;
+}
+
+.prose hr {
+  @apply my-8 border-t border-border;
+}
+
+/* Blog Post Card Hover Effects */
+.blog-post-card {
+  @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-xl;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
+  scroll-snap-type: y proximity;
+}
+
+/* Scroll Performance */
+.scroll-performance {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  scroll-snap-align: start;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  contain: content;
+}
+
+/* Scroll Reveal Animation */
+.scroll-reveal {
+  @apply opacity-0 translate-y-4 transition-all duration-700;
+}
+
+.scroll-reveal.visible {
+  @apply opacity-100 translate-y-0;
+}
+
+/* Prevent Scroll Lock */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  overflow-y: auto !important;
+  position: relative !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Smooth Section Transitions */
+section {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  scroll-snap-align: start;
+  scroll-margin-top: 4rem;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: content;
+}
+
+/* Prevent Overscroll */
+html,
+body {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
+  scroll-snap-type: y proximity;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  -ms-touch-action: pan-y;
+}
+
+/* Scroll Progress Indicator */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, var(--primary), var(--primary));
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  z-index: 1000;
+}
+
+/* Scroll Snap Points */
+.scroll-snap {
+  scroll-snap-type: y proximity;
+  scroll-snap-points-y: repeat(100vh);
+  scroll-snap-destination: 0 0;
+  scroll-snap-coordinate: 0 0;
+}
+
+/* Scroll Momentum */
+.scroll-momentum {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: content;
+  touch-action: pan-y;
+  -ms-touch-action: pan-y;
+}
+
+/* Scroll Feedback */
+.scroll-feedback {
+  transition: transform 0.3s ease-out;
+}
+
+.scroll-feedback:hover {
+  transform: translateY(-2px);
+}
+
+/* Cursor Styles */
+body {
+  cursor: none;
+}
+
+/* Show default cursor for interactive elements when custom cursor is disabled */
+@media (hover: none) {
+  body {
+    cursor: auto;
+  }
+}
+
+/* Show default cursor for touch devices */
+@media (pointer: coarse) {
+  body {
+    cursor: auto;
+  }
+}
+
+/* Show default cursor for elements that need it */
+a,
+button,
+input,
+select,
+textarea,
+[role="button"],
+[role="link"],
+[role="menuitem"],
+[role="option"],
+[role="tab"],
+[role="treeitem"] {
+  cursor: pointer;
+}
+
+/* Show text cursor for text inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea {
+  cursor: text;
+}
+
+/* Show default cursor for disabled elements */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[disabled] {
+  cursor: not-allowed;
+}
+
+/* Optimize Scroll Performance */
+* {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+  contain: content;
 }
