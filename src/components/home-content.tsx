@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, FileDown } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -200,7 +201,7 @@ export function HomeContent() {
                         </span>
                       </div>
                       <p className="text-lg text-muted-foreground">
-                        Co-founded and developing the world's best tool for
+                        Co-founded and developing the world&apos;s best tool for
                         computational research, combining Jupyter notebooks with
                         a Notion-style UI/UX and built-in AI agents. Building a
                         revolutionary platform for researchers and data

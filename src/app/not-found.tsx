@@ -22,9 +22,9 @@ export default function NotFound() {
             Lost in the Digital Void
           </h2>
           <p className="text-lg text-muted-foreground">
-            Looks like you've ventured into uncharted territory. While I'm
-            passionate about exploring new frontiers in tech, this page isn't
-            one of them.
+            Looks like you&apos;ve ventured into uncharted territory. While
+            I&apos;m passionate about exploring new frontiers in tech, this page
+            isn&apos;t one of them.
           </p>
         </motion.div>
 
@@ -78,7 +78,7 @@ export default function NotFound() {
           className="pt-8 space-y-4"
         >
           <p className="text-sm text-muted-foreground">
-            While you're here, why not check out some of my{" "}
+            While you&apos;re here, why not check out some of my{" "}
             <Link href="/projects" className="text-primary hover:underline">
               featured projects
             </Link>{" "}
@@ -96,7 +96,7 @@ export default function NotFound() {
             >
               let me know
             </Link>
-            . I'm always happy to connect!
+            . I&apos;m always happy to connect!
           </p>
         </motion.div>
       </div>
