@@ -1,38 +1,38 @@
 "use client";
 
 import type React from "react";
-
 import { useRef, useState, useEffect } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface Card3DProps {
+interface CardLuxuryProps {
   children: React.ReactNode;
   className?: string;
-  depth?: number;
-  rotateIntensity?: number;
-  scaleOnHover?: boolean;
-  transitionSpeed?: number;
+  hoverIntensity?: number;
+  glowIntensity?: number;
+  borderGradient?: boolean;
+  shimmerEffect?: boolean;
 }
 
-export function Card3D({
+export function CardLuxury({
   children,
   className = "",
-  depth = 30,
-  rotateIntensity = 5,
-  scaleOnHover = true,
-  transitionSpeed = 0.4,
-}: Card3DProps) {
+  hoverIntensity = 0.02,
+  glowIntensity = 0.5,
+  borderGradient = true,
+  shimmerEffect = true,
+}: CardLuxuryProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Mouse position
+  // Mouse position for subtle parallax effect
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Spring animations with adjusted parameters for smoother movement
-  const rotateX = useSpring(
-    useTransform(y, [-0.5, 0.5], [rotateIntensity, -rotateIntensity]),
+  // Spring animations for smooth movement
+  const translateX = useSpring(
+    useTransform(x, [-0.5, 0.5], [-hoverIntensity * 100, hoverIntensity * 100]),
     {
       stiffness: 150,
       damping: 20,
@@ -40,8 +40,8 @@ export function Card3D({
     }
   );
 
-  const rotateY = useSpring(
-    useTransform(x, [-0.5, 0.5], [-rotateIntensity, rotateIntensity]),
+  const translateY = useSpring(
+    useTransform(y, [-0.5, 0.5], [-hoverIntensity * 100, hoverIntensity * 100]),
     {
       stiffness: 150,
       damping: 20,
@@ -49,7 +49,15 @@ export function Card3D({
     }
   );
 
+  // Scale spring for hover effect
   const scale = useSpring(1, {
+    stiffness: 150,
+    damping: 20,
+    mass: 1.2,
+  });
+
+  // Glow effect spring
+  const glow = useSpring(0, {
     stiffness: 150,
     damping: 20,
     mass: 1.2,
@@ -93,34 +101,31 @@ export function Card3D({
   }
 
   function onMouseEnter() {
-    if (scaleOnHover) {
-      scale.set(1.02);
-    }
+    setIsHovered(true);
+    scale.set(1.02);
+    glow.set(glowIntensity);
   }
 
   function onMouseLeave() {
+    setIsHovered(false);
     x.set(0);
     y.set(0);
     scale.set(1);
+    glow.set(0);
   }
 
-  // Updated scroll animation for smoother entrance
+  // Scroll animation variants
   const scrollVariants = {
     hidden: {
       opacity: 0,
-      y: 15,
-      rotateX: 2,
+      y: 20,
     },
     visible: {
       opacity: 1,
       y: 0,
-      rotateX: 0,
       transition: {
-        duration: transitionSpeed,
+        duration: 0.6,
         ease: [0.22, 1, 0.36, 1],
-        opacity: {
-          duration: transitionSpeed * 1.2,
-        },
       },
     },
   };
@@ -129,7 +134,13 @@ export function Card3D({
     <motion.div
       ref={ref}
       className={cn(
-        "perspective-container transition-all duration-300 ease-out",
+        "relative group",
+        "transition-all duration-500 ease-out",
+        "before:absolute before:inset-0 before:rounded-xl before:transition-opacity before:duration-500",
+        borderGradient &&
+          "before:bg-gradient-to-r before:from-primary/20 before:via-primary/10 before:to-primary/20 before:opacity-0 hover:before:opacity-100",
+        shimmerEffect &&
+          "after:absolute after:inset-0 after:rounded-xl after:bg-gradient-to-r after:from-transparent after:via-white/10 after:to-transparent after:translate-x-[-200%] hover:after:translate-x-[200%] after:transition-transform after:duration-1000 after:ease-in-out",
         className
       )}
       onMouseMove={onMouseMove}
@@ -138,26 +149,32 @@ export function Card3D({
       initial="hidden"
       animate={isInView ? "visible" : "hidden"}
       variants={scrollVariants}
+      style={{
+        boxShadow: useTransform(
+          glow,
+          (value) =>
+            `0 0 ${value * 20}px ${value * 10}px rgba(var(--primary), ${
+              value * 0.1
+            })`
+        ),
+      }}
     >
       <motion.div
         style={{
-          rotateX,
-          rotateY,
+          x: translateX,
+          y: translateY,
           scale,
-          transformStyle: "preserve-3d",
-          transformPerspective: "1200px",
         }}
-        className="w-full h-full transition-transform duration-300 ease-out"
+        className={cn(
+          "relative z-10 h-full w-full rounded-xl",
+          "bg-card/95 backdrop-blur-sm",
+          "border border-border/50",
+          "transition-colors duration-300",
+          "hover:border-primary/30",
+          "overflow-hidden"
+        )}
       >
-        <motion.div
-          style={{
-            transform: `translateZ(${-depth}px)`,
-            transformStyle: "preserve-3d",
-          }}
-          className="w-full h-full transition-all duration-300 ease-out"
-        >
-          {children}
-        </motion.div>
+        <div className="relative h-full w-full">{children}</div>
       </motion.div>
     </motion.div>
   );

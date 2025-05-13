@@ -193,10 +193,44 @@ export function HomeContent() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <h4 className="text-xl font-semibold">
+                          Co-Founder at Bashnota
+                        </h4>
+                        <span className="text-sm text-muted-foreground">
+                          2024 - Present
+                        </span>
+                      </div>
+                      <p className="text-lg text-muted-foreground">
+                        Co-founded and developing the world's best tool for
+                        computational research, combining Jupyter notebooks with
+                        a Notion-style UI/UX and built-in AI agents. Building a
+                        revolutionary platform for researchers and data
+                        scientists.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xl font-semibold">
+                          Software Engineer (Employee #1) at Werkflow
+                        </h4>
+                        <span className="text-sm text-muted-foreground">
+                          2024 - Present
+                        </span>
+                      </div>
+                      <p className="text-lg text-muted-foreground">
+                        Leading the development of an all-in-one software
+                        platform for dancers, helping them manage their
+                        community, finances, and turn their passion into a
+                        career. Building core infrastructure and features as the
+                        first engineering hire.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xl font-semibold">
                           Founder & CEO at Popper LLC
                         </h4>
                         <span className="text-sm text-muted-foreground">
-                          2022 - Present
+                          2022 - 2024
                         </span>
                       </div>
                       <p className="text-lg text-muted-foreground">
@@ -211,7 +245,7 @@ export function HomeContent() {
                           Freelance Developer
                         </h4>
                         <span className="text-sm text-muted-foreground">
-                          2022 - Present
+                          2022 - 2024
                         </span>
                       </div>
                       <p className="text-lg text-muted-foreground">

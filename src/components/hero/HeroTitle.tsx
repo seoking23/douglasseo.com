@@ -7,7 +7,7 @@ export const HeroTitle: React.FC = () => {
         Douglas Seo
       </h1>
       <p className="text-xl text-muted-foreground">
-        Full-Stack Software Engineer & Founder
+        Founder & Full-Stack Software Engineer
       </p>
     </div>
   );

@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { Card3D } from "@/components/card-3d";
+import { CardLuxury } from "@/components/card-luxury";
 import { ProjectCard } from "@/components/project-card";
 
 export const OtherProjects: React.FC = () => {
@@ -11,7 +11,7 @@ export const OtherProjects: React.FC = () => {
         Other Projects
       </h3>
       <div className="grid gap-8 md:grid-cols-2">
-        <Card3D depth={30} rotateIntensity={5}>
+        <CardLuxury hoverIntensity={0.015} glowIntensity={0.3}>
           <div className="relative">
             <ProjectCard
               title="CurlyHair.ai"
@@ -25,15 +25,15 @@ export const OtherProjects: React.FC = () => {
             <div className="absolute bottom-6 right-6">
               <Link
                 href="/blog/launching-curlyhair-ai"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 group"
               >
                 Read More
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
             </div>
           </div>
-        </Card3D>
-        <Card3D depth={30} rotateIntensity={5}>
+        </CardLuxury>
+        <CardLuxury hoverIntensity={0.015} glowIntensity={0.3}>
           <div className="relative">
             <ProjectCard
               title="Chirp Microsystems @ TDK"
@@ -45,8 +45,8 @@ export const OtherProjects: React.FC = () => {
               details="Developed automation tools for ultrasonic sensor testing and data analysis, improving testing efficiency by 40%."
             />
           </div>
-        </Card3D>
-        <Card3D depth={30} rotateIntensity={5}>
+        </CardLuxury>
+        <CardLuxury hoverIntensity={0.015} glowIntensity={0.3}>
           <div className="relative">
             <ProjectCard
               title="tomylovemiwa.com"
@@ -66,15 +66,15 @@ export const OtherProjects: React.FC = () => {
             <div className="absolute bottom-6 right-6">
               <Link
                 href="/blog/building-love-into-code"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 group"
               >
                 Read More
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
             </div>
           </div>
-        </Card3D>
-        <Card3D depth={30} rotateIntensity={5}>
+        </CardLuxury>
+        <CardLuxury hoverIntensity={0.015} glowIntensity={0.3}>
           <div className="relative">
             <ProjectCard
               title="Personal Portfolio"
@@ -86,7 +86,20 @@ export const OtherProjects: React.FC = () => {
               details="A responsive personal website showcasing my projects, skills, and writing. Features modern UI/UX with animations and interactive elements."
             />
           </div>
-        </Card3D>
+        </CardLuxury>
+        <CardLuxury hoverIntensity={0.015} glowIntensity={0.3}>
+          <div className="relative">
+            <ProjectCard
+              title="Werkflow"
+              description="All-in-one software platform for dancers, helping them manage their community, finances, and turn their passion into a career. Building core infrastructure and features as the first engineering hire."
+              imageSrc="/werkflow-logo.png?height=300&width=600"
+              tags={["Platform", "Dance", "Community", "Finances", "Career"]}
+              demoUrl="https://werkflow.us"
+              repoUrl="https://github.com/getwerk"
+              details="Werkflow is revolutionizing how dancers manage their careers by providing tools for community building, financial management, and career development. As the first engineering hire, I'm building the core platform infrastructure and key features."
+            />
+          </div>
+        </CardLuxury>
       </div>
     </div>
   );

@@ -6,6 +6,15 @@ import { BlogPostCard } from "@/components/blog-post-card";
 export default function BlogPage() {
   const posts = [
     {
+      title:
+        "Collaborating with BashNota: Bringing Revolutionary Computational Research Tools to the Masses",
+      excerpt:
+        "How I'm working with Taha Bouhsine, CEO of MLNomads and inventor of YAT, to bring BashNota - the world's greatest computational research tool - to researchers and developers worldwide.",
+      date: "May 12, 2024",
+      readTime: "5 min read",
+      slug: "/blog/collaborating-with-bashnota",
+    },
+    {
       title: "Building Love into Code: How I Made tomylovemiwa.com",
       excerpt:
         "The story of creating a Valentine's Day love game website with 6 interactive games and a surprise Japan trip planner.",

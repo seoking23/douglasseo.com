@@ -33,23 +33,30 @@ export function ProjectCard({
   details,
 }: ProjectCardProps) {
   // Convert image path to optimized WebP version
-  const optimizedImageSrc = imageSrc
-    .replace(/\.[^.]+$/, ".webp")
-    .replace("/public/", "/optimized/");
+  const optimizedImageSrc = imageSrc;
+  // .replace(/\.[^.]+$/, ".webp")
+  // .replace("/public/", "/optimized/");
 
   return (
     <ScrollEffects perspective rotate rotateAmount={5} className="h-full">
       <div className="group relative h-full overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md">
         <div className="relative aspect-video overflow-hidden">
-          <Image
-            src={optimizedImageSrc || "/placeholder.svg"}
-            alt={title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-            loading="lazy"
-            quality={75}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          <Link
+            href={demoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block h-full w-full"
+          >
+            <Image
+              src={optimizedImageSrc || "/placeholder.svg"}
+              alt={title}
+              fill
+              className="object-contain transition-transform duration-300 group-hover:scale-105 cursor-pointer"
+              loading="lazy"
+              quality={75}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </Link>
           {details && (
             <div className="absolute top-2 right-2">
               <TooltipProvider>

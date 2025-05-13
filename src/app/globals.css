@@ -386,26 +386,7 @@ body {
   transform: translateY(-2px);
 }
 
-/* Cursor Styles */
-body {
-  cursor: none;
-}
-
-/* Show default cursor for interactive elements when custom cursor is disabled */
-@media (hover: none) {
-  body {
-    cursor: auto;
-  }
-}
-
-/* Show default cursor for touch devices */
-@media (pointer: coarse) {
-  body {
-    cursor: auto;
-  }
-}
-
-/* Show default cursor for elements that need it */
+/* Show default cursor for interactive elements */
 a,
 button,
 input,

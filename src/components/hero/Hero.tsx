@@ -13,10 +13,12 @@ export const Hero: React.FC = () => {
   return (
     <section
       id="hero-section"
-      className="container relative z-10 px-4 md:px-6 py-12 md:py-24 lg:py-32 overflow-visible"
+      className="container relative z-50 px-4 md:px-6 py-12 md:py-24 lg:py-32 overflow-visible"
       style={{
         isolation: "isolate",
         transform: "translateZ(0)",
+        position: "relative",
+        backgroundColor: "var(--background)",
       }}
     >
       <ScrollEffects parallax parallaxSpeed={-0.1} perspective>
