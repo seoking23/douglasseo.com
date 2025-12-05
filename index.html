@@ -83,32 +83,46 @@
         
         section {
             padding: 4rem 0;
+            position: relative;
+            z-index: 2;
         }
         
-        .hero {
-            text-align: center;
-            padding: 6rem 0;
+        main {
             background: white;
             color: #333;
             position: relative;
-            overflow: hidden;
         }
         
-        .hero::before {
+        :root {
+            --scroll-gradient: radial-gradient(circle at center, transparent, #93c5fd);
+        }
+
+        main::before {
             content: '';
-            position: absolute;
-            inset: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             z-index: 0;
             pointer-events: none;
-            background-image: radial-gradient(circle at center, #93c5fd, transparent);
+            background-image: var(--scroll-gradient);
+        }
+
+        .hero {
+            text-align: center;
+            padding: 6rem 0;
+            background: transparent;
+            color: inherit;
+            position: relative;
         }
         
         .dotted-surface {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             z-index: 1;
             pointer-events: none;
         }
@@ -199,7 +213,7 @@
         }
         
         .card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
         
@@ -223,6 +237,11 @@
         }
         
         .card-clickable {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+        .experience-item-clickable {
             text-decoration: none;
             color: inherit;
             cursor: pointer;
@@ -259,8 +278,7 @@
         
         .experience-item, .education-item {
             margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid #e5e5e5;
+
         }
         
         .experience-item:last-child {
@@ -289,6 +307,10 @@
         .job-description {
             color: #666;
             line-height: 1.6;
+        }
+        .course-work-text {
+            color: #666;
+            font-size: 0.9rem;
         }
         
         .bg-muted {
@@ -325,8 +347,7 @@
         }
         
         footer {
-            background: #333;
-            color: white;
+            color: black;
             text-align: center;
             padding: 2rem 0;
         }
@@ -339,7 +360,7 @@
         }
         
         .social-links a {
-            color: white;
+            color: black;
             text-decoration: none;
             transition: opacity 0.3s;
         }
@@ -506,211 +527,43 @@
     </style>
 </head>
 <body>
-    <header>
-        <nav class="container">
-            <div class="logo">Douglas Seo</div>
-            <ul>
-                <li><a href="#about">About</a></li>
-                <li><a href="#tech-stack">Tech Stack</a></li>
-                <li><a href="#projects">Projects</a></li>
-                <li><a href="#experience">Experience</a></li>
-                <li><a href="/blog/">Writing</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
 
     <main>
+        <div class="dotted-surface" id="dottedSurface"></div>
         <section class="hero">
-            <div class="dotted-surface" id="dottedSurface"></div>
             <div class="container">
                 <img src="/public/optimized/profile_image.webp" alt="Douglas Seo" class="profile-image">
                 <h1>Douglas Seo</h1>
-                <p>AI Software Engineer & Entrepreneur</p>
-                <p>UC Berkeley EECS • Building impactful products</p>
-                <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="#contact" class="btn btn-primary">Get In Touch</a>
-                    <button onclick="openPdfModal('/public/Douglas_Seo_Resume_AI_Research.pdf', 'AI Research Resume')" class="btn btn-outline">
-                        Preview Resume
-                    </button>
-                    <a href="/public/Douglas_Seo_Resume_AI_Research.pdf" class="btn btn-outline" target="_blank" download>
-                        Download Resume
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <section id="about">
-            <div class="container">
                 <div class="section-title">
-                    <h2>About Me</h2>
-                    <p>UC Berkeley EECS grad with a passion for building impactful products</p>
+                    <p>서경덕 - B.S. in Electrical Engineering and Computer Science at UC Berkeley - Founder and Engineer</p>
                 </div>
-                <div class="about-content">
-                    <div class="about-text">
-                        <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
-                            I'm a creative, impact-driven engineer with startup grit. As the founder of Popper LLC, I focus on building real-time applications, cloud-native systems, and AI interfaces that bridge digital and real-world value.
-                        </p>
-                        <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
-                            My technical expertise spans full-stack development, with a particular focus on React, React Native, Node.js, Python, and cloud infrastructure. I'm passionate about creating software that solves real problems and delivers tangible value to users.
-                        </p>
-                        <p style="font-size: 1.1rem;">
-                            When I'm not coding, you can find me exploring new technologies, mentoring aspiring developers, or enjoying the vibrant tech scene in San Francisco. I'm always open to discussing new ideas and potential collaborations.
-                        </p>
-                    </div>
-                    <img src="/public/optimized/doug_grad_with_bear.webp" alt="Douglas at UC Berkeley graduation" class="about-image">
-                </div>
-            </div>
-        </section>
-
-        <section id="tech-stack" class="bg-muted">
-            <div class="container">
-                <div class="section-title">
-                    <h2>Tech Stack</h2>
-                    <p>Technologies and tools I work with</p>
-                </div>
-                <div class="tech-stack" style="justify-content: center; max-width: 800px; margin: 0 auto;">
-                    <span class="tech-tag">JavaScript</span>
-                    <span class="tech-tag">TypeScript</span>
-                    <span class="tech-tag">React</span>
-                    <span class="tech-tag">React Native</span>
-                    <span class="tech-tag">Node.js</span>
-                    <span class="tech-tag">Python</span>
-                    <span class="tech-tag">Firebase</span>
-                    <span class="tech-tag">GCP</span>
-                    <span class="tech-tag">AWS</span>
-                    <span class="tech-tag">C++</span>
-                    <span class="tech-tag">GraphQL</span>
-                    <span class="tech-tag">REST APIs</span>
-                    <span class="tech-tag">Git</span>
-                    <span class="tech-tag">CI/CD</span>
-                    <span class="tech-tag">Machine Learning</span>
-                    <span class="tech-tag">NLP</span>
-                </div>
-            </div>
-        </section>
-
-        <section id="projects">
-            <div class="container">
-                <div class="section-title">
-                    <h2>Featured Projects</h2>
-                    <p>A selection of my recent work and personal projects</p>
-                </div>
-                <div class="grid grid-2">
-                    <a href="https://azetta.ai" target="_blank" rel="noopener noreferrer" class="card card-clickable">
-                        <img src="/public/azetta-logo.svg" alt="Azetta AI logo" class="project-logo">
-                        <h3 style="margin-bottom: 1rem;">Azetta AI - Cosma</h3>
-                        <p style="margin-bottom: 1rem; color: #666;">Co-founded and developing the world's most efficient, developer-friendly AI embedding, vector search, and Machine Learning model serving platform.</p>
-                        <div class="tech-stack">
-                            <span class="tech-tag">Python</span>
-                            <span class="tech-tag">Node.js</span>
-                            <span class="tech-tag">PostgreSQL</span>
-                            <span class="tech-tag">FastAPI</span>
-                            <span class="tech-tag">Docker</span>
-                            <span class="tech-tag">AWS</span>
-                            <span class="tech-tag">GCP</span>
-                            <span class="tech-tag">Azure</span>
-                            <span class="tech-tag">Linux</span>
-                            <span class="tech-tag">MacOS</span>
-                        </div>
-                    </a>
-                    <a href="https://werkflow.us" target="_blank" rel="noopener noreferrer" class="card card-clickable">
-                        <img src="/public/werkflow-logo.png" alt="Werkflow logo" class="project-logo">
-                        <h3 style="margin-bottom: 1rem;">Werkflow</h3>
-                        <p style="margin-bottom: 1rem; color: #666;">All-in-one software platform for dancers, helping them manage their community, finances, and turn their passion into a career. Employee #1 and lead developer.</p>
-                        <div class="tech-stack">
-                            <span class="tech-tag">React Native</span>
-                            <span class="tech-tag">Node.js</span>
-                            <span class="tech-tag">Firebase</span>
-                        </div>
-                    </a>
-                    <a href="https://popper.social" target="_blank" rel="noopener noreferrer" class="card card-clickable">
-                        <img src="/public/optimized/popper-logo.webp" alt="Popper logo" class="project-logo">
-                        <h3 style="margin-bottom: 1rem;">Popper LLC</h3>
-                        <p style="margin-bottom: 1rem; color: #666;">Social rewards app with 1.1k+ users and 60+ partner businesses. Founded and developed the entire platform.</p>
-                        <div class="tech-stack">
-                            <span class="tech-tag">React Native</span>
-                            <span class="tech-tag">Firebase</span>
-                            <span class="tech-tag">GCP</span>
-                        </div>
-                    </a>
-                    <a href="https://curly-hair-ai.com" target="_blank" rel="noopener noreferrer" class="card card-clickable">
-                        <img src="/public/optimized/HazeIcon.webp" alt="Curly-Hair-ai.com logo" class="project-logo">
-                        <h3 style="margin-bottom: 1rem;">Curly-Hair-ai.com</h3>
-                        <p style="margin-bottom: 1rem; color: #666;">AI platform that helps users understand and care for their curly hair through personalized recommendations and routines.</p>
-                        <div class="tech-stack">
-                            <span class="tech-tag">AI/ML</span>
-                            <span class="tech-tag">Python</span>
-                            <span class="tech-tag">React</span>
-                        </div>
-                    </a>
-                </div>
-                <div style="text-align: center; margin-top: 2rem;">
-                    <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="btn btn-outline" style="color: #333; border-color: #333;">
-                        View All Projects →
-                    </a>
-                </div>
-            </div>
-        </section>
-
-        <section id="writing" class="bg-muted">
-            <div class="container">
-                <div class="section-title">
-                    <h2>Writing</h2>
-                    <p>Technical articles, tutorials, and thoughts on software development</p>
-                </div>
-                <div class="grid grid-2">
-                    <a href="/blog/building-in-public.html" class="card card-clickable">
-                        <h3 style="margin-bottom: 0.5rem;">Building in Public: The Popper Journey</h3>
-                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">March 15, 2023 • 10 min read</p>
-                        <p style="color: #666; margin-bottom: 1.5rem;">Sharing the challenges and lessons learned while building Popper from the ground up and growing to over 1,000 users.</p>
-                        <div class="card-footer">
-                            <span class="read-more-link">Read more →</span>
-                        </div>
-                    </a>
-                    <a href="/blog/engineering-poppers-infrastructure.html" class="card card-clickable">
-                        <h3 style="margin-bottom: 0.5rem;">Engineering Popper's Infrastructure</h3>
-                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">February 22, 2023 • 12 min read</p>
-                        <p style="color: #666; margin-bottom: 1.5rem;">A deep dive into the technical architecture behind Popper, including our approach to scalability and real-time synchronization.</p>
-                        <div class="card-footer">
-                            <span class="read-more-link">Read more →</span>
-                        </div>
-                    </a>
-                    <a href="/blog/launching-curlyhair-ai.html" class="card card-clickable">
-                        <h3 style="margin-bottom: 0.5rem;">Curly-Hair-ai.com: Building a Domain-Specific AI for Haircare</h3>
-                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">January 10, 2023 • 8 min read</p>
-                        <p style="color: #666; margin-bottom: 1.5rem;">The journey of creating an AI platform that helps users understand and care for their curly hair through personalized recommendations.</p>
-                        <div class="card-footer">
-                            <span class="read-more-link">Read more →</span>
-                        </div>
-                    </a>
-                    <a href="/blog/designing-for-delight.html" class="card card-clickable">
-                        <h3 style="margin-bottom: 0.5rem;">Designing for Delight: What Makes Developer UX Feel Magical</h3>
-                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">November 15, 2022 • 10 min read</p>
-                        <p style="color: #666; margin-bottom: 1.5rem;">Breakdown of good developer UX: fast loads, subtle animation, feedback on interaction, component design clarity.</p>
-                        <div class="card-footer">
-                            <span class="read-more-link">Read more →</span>
-                        </div>
-                    </a>
-                </div>
-                <div style="text-align: center; margin-top: 2rem;">
-                    <a href="/blog/" class="btn btn-outline" style="color: #333; border-color: #333;">
-                        Read All Articles →
-                    </a>
-                </div>
+                    <p>
+                        My Grandfather learned English in the soup kitchens of the war that reduced his childhood home to ash and rubble. His work in city government built the Korea we know today.
+                    </br>
+                        My father learned English at Samsung (also lasers and RF), then at HP he pioneered Sillicon Valley MEMS sensors to all of East Asia. He left on the back of cattle drawn carriage, and returned with a Tesla.
+                    </br>
+                        I, with the selfless love of my mother and grandmother, learned English in Kindergarten, and strive to learn how to build a sustainably better future for all. I've built some cool stuff, like an app that pays you for hanging out with friends, and made some money for small businesses along the way. 
+                    </p>
+                    <p>
+                        Now, I want to build using my physics and math background.
+                        </br>
+                        Fluent in English, Korean, Python, Spanish, JavaScript. Learning Japanese, LaTex, and Learning.
+                        </br>
+                        When I'm not building, you can find me playing with a ball or facetiming my gf. I'm always open to discussing new ideas and potential collaborations.
+                        </br>
+                        I nerd out over physics, math, spirituality, philanthropy, and hacking the money system.
+                        </br>
+                    </p>
+                    
             </div>
         </section>
 
         <section id="experience">
             <div class="container">
-                <div class="section-title">
-                    <h2>Experience & Education</h2>
-                    <p>My professional experience and education</p>
-                </div>
-                
                 <div style="max-width: 800px; margin: 0 auto;">
                     <h3 style="margin-bottom: 2rem; font-size: 1.8rem;">Experience</h3>
                     
+                    <a href="https://azetta.ai" target="_blank" rel="noopener noreferrer" class="experience-item-clickable">
                     <div class="experience-item">
                         <div class="job-header">
                             <div class="job-title"><img src="/public/azetta-logo.svg" alt="Azetta AI logo" class="company-logo">Co-Founder at Azetta AI - Cosma</div>
@@ -720,7 +573,8 @@
                             Co-founded and developing the world's most efficient, developer-friendly AI embedding, vector search, and Machine Learning model serving platform. Building a revolutionary platform for developers and data scientists.
                         </div>
                     </div>
-                    
+                    </a>
+                    <a href="https://werkflow.us" target="_blank" rel="noopener noreferrer" class="experience-item-clickable">
                     <div class="experience-item">
                         <div class="job-header">
                             <div class="job-title"><img src="/public/werkflow-logo.png" alt="Werkflow logo" class="company-logo">Founding Engineer (Employee #1 and Technical Lead) at Werkflow</div>
@@ -730,138 +584,61 @@
                             Leading the development of an all-in-one software platform for dancers, helping them manage their community, finances, and turn their passion into a career. Building core infrastructure and features as the first engineering hire.
                         </div>
                     </div>
-                    
+                    </a>
+                    <a href="https://popper.social" target="_blank" rel="noopener noreferrer" class="experience-item-clickable">
                     <div class="experience-item">
                         <div class="job-header">
-                            <div class="job-title"><img src="/public/optimized/popper-logo.webp" alt="Popper logo" class="company-logo">Founder & CEO at Popper LLC</div>
+                            <div class="job-title"><img src="/public/optimized/popper-logo.webp" alt="Popper logo" class="company-logo">Founder & CEO at Popper</div>
                             <div class="job-date">2022 - 2024</div>
                         </div>
                         <div class="job-description">
                             Founded and developed a social rewards app with 1.1k+ users and 60+ partner businesses. Built with React Native, Firebase, and GCP.
                         </div>
                     </div>
-                    
+                    </a>
+
+                    <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="experience-item-clickable">
                     <div class="experience-item">
                         <div class="job-header">
-                            <div class="job-title">Freelance Developer</div>
+                            <div class="job-title"><img src="/public/optimized/tomylovemiwa-icon.webp" alt="Tomy Love Miwa logo" class="company-logo">Freelance Developer</div>
                             <div class="job-date">2022 - 2024</div>
                         </div>
                         <div class="job-description">
                             Worked on various web and mobile development projects for clients across different industries. Specialized in React and Node.js applications.
                         </div>
                     </div>
-                    
+                    </a>
+                    <a href="https://ipira.berkeley.edu/chirp-microsystems-inc" target="_blank" rel="noopener noreferrer" class="experience-item-clickable">
                     <div class="experience-item">
                         <div class="job-header">
-                            <div class="job-title"><img src="/public/chirp-microsystems.jpg" alt="Chirp Microsystems logo" class="company-logo">Software Engineering Intern at Chirp Microsystems (TDK)</div>
+                            <div class="job-title"><img src="/public/optimized/chirp-microsystems.webp" alt="Chirp Microsystems logo" class="company-logo">Software Engineering Intern at Chirp Microsystems (TDK)</div>
                             <div class="job-date">2019</div>
                         </div>
                         <div class="job-description">
                             Developed Python/C++ automation tools for sensor data processing and analysis. Improved testing efficiency by 40%.
                         </div>
                     </div>
+                    </a>
 
                     <h3 style="margin-bottom: 2rem; margin-top: 3rem; font-size: 1.8rem;">Education</h3>
                     
-                    <div class="education-item">
+                    <div class="education-item" id="education-item">
                         <div class="job-header">
-                            <div class="job-title">B.S. in Electrical Engineering and Computer Science (EECS)</div>
+                            <div class="job-title"><img src="/public/optimized/UCB_seal.webp" alt="UC Berkeley seal" class="company-logo">B.S. in Electrical Engineering and Computer Science (EECS)</div>
                             <div class="job-date">2018 - 2022</div>
+                            
                         </div>
-                        <div class="job-description">
+                        <div class="job-description" style="margin-bottom: 0.8rem;">
                             University of California, Berkeley
+                        </div>
+                        <div class="education-highlight">
+                            <span class="course-work-text">Intro to Artificial Intelligence & Machine Learning, Discrete Math, Linear Algebra, Calculus, Physics, Data Structures & Algorithms, Entrepreneurship, Web Development, Cybersecurity</span>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section id="contact" class="bg-muted">
-            <div class="container">
-                <div class="section-title">
-                    <h2>Contact</h2>
-                    <p>Get in touch for opportunities or just to say hello</p>
-                </div>
-                
-                <div class="grid grid-2" style="max-width: 1000px; margin: 0 auto;">
-                    <div class="card">
-                        <h3 style="margin-bottom: 1rem;">Send a Message</h3>
-                        <p style="color: #666; margin-bottom: 1.5rem;">Fill out the form below and I'll get back to you as soon as possible</p>
-                        
-                        <form class="contact-form">
-                            <div class="form-group">
-                                <label for="name">Name</label>
-                                <input type="text" id="name" name="name" placeholder="Enter your name" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="email">Email</label>
-                                <input type="email" id="email" name="email" placeholder="Enter your email" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="message">Message</label>
-                                <textarea id="message" name="message" placeholder="Enter your message" required></textarea>
-                            </div>
-                            
-                            <button type="submit" class="btn btn-primary" style="width: 100%;">Send Message</button>
-                        </form>
-                    </div>
-                    
-                    <div class="card">
-                        <h3 style="margin-bottom: 1rem;">Contact Information</h3>
-                        <p style="color: #666; margin-bottom: 1.5rem;">Alternative ways to get in touch with me</p>
-                        
-                        <div style="margin-bottom: 1.5rem;">
-                            <div style="font-weight: 500; margin-bottom: 0.5rem;">Email</div>
-                            <div style="color: #666;">
-                                <span id="email-address" style="cursor: pointer; text-decoration: underline; color: #0066cc;">douglasseo.business@gmail.com</span>
-                                <div id="email-indicator" style="margin-top: 0.5rem; font-size: 0.9rem; display: none;">
-                                    <div id="email-opening" style="color: #0066cc; display: none;">
-                                        📧 Opening email client...
-                                    </div>
-                                    <div id="email-fallback" style="color: #666; display: none;">
-                                        <span>Email client not detected. </span>
-                                        <button id="copy-email-btn" style="background: none; border: 1px solid #0066cc; color: #0066cc; padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.8rem; cursor: pointer;">
-                                            Copy Email
-                                        </button>
-                                        <span id="copy-success" style="color: #28a745; margin-left: 0.5rem; display: none;">Copied!</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 1.5rem;">
-                            <div style="font-weight: 500; margin-bottom: 0.5rem;">Phone</div>
-                            <div style="color: #666;">
-                                <a href="tel:7079539522" style="cursor: pointer; text-decoration: underline; color: #0066cc;">707.953.9522</a>
-                                <span style="margin: 0 0.5rem; color: #ccc;">|</span>
-                                <a href="sms:7079539522" style="cursor: pointer; text-decoration: underline; color: #0066cc; font-size: 0.9rem;">Text</a>
-                            </div>
-                        </div>
-                        
-                        <div style="margin-bottom: 1.5rem;">
-                            <div style="font-weight: 500; margin-bottom: 0.5rem;">Location</div>
-                            <div style="color: #666;">San Francisco, CA</div>
-                        </div>
-                        
-                        <div style="margin-bottom: 1.5rem;">
-                            <div style="font-weight: 500; margin-bottom: 0.5rem;">Social Media</div>
-                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: none;">GitHub</a>
-                                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: none;">Twitter</a>
-                                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: none;">Instagram</a>
-                                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" style="color: #0066cc; text-decoration: none;">LinkedIn</a>
-                            </div>
-                        </div>
-                        
-                        <p style="color: #666;">
-                            I'm currently open to onboarding new users to Azetta AI - Cosma, as well as anyone interested in the Machine Learning space.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
 
     <footer>
@@ -871,8 +648,15 @@
                 <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer">Twitter</a>
                 <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer">Instagram</a>
                 <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            
             </div>
-            <p>&copy; 2024 Douglas Seo. All rights reserved.</p>
+            <div class="social-links">
+                <a href="tel:7079539522" style="cursor: pointer; text-decoration: underline;">707.953.9522</a>
+                <span style="margin: 0 0.5rem; color: #ccc;">|</span>
+                <a href="sms:7079539522" style="cursor: pointer; text-decoration: underline;">Text Me</a>
+                <span style="color: #ccc;">|</span>
+                <a id="email-address" href="mailto:douglasseo.business@gmail.com" style="cursor: pointer; text-decoration: underline;">Email Me</a>
+            </div>
         </div>
     </footer>
 
@@ -906,86 +690,8 @@
             });
         });
 
-        // Contact form mailto handling
-        document.querySelector('.contact-form').addEventListener('submit', function(contactFormSubmitEvent) {
-            contactFormSubmitEvent.preventDefault();
-            
-            const senderNameInput = document.getElementById('name');
-            const senderEmailInput = document.getElementById('email');
-            const senderMessageInput = document.getElementById('message');
-            
-            const senderName = senderNameInput.value.trim();
-            const senderEmail = senderEmailInput.value.trim();
-            const senderMessage = senderMessageInput.value.trim();
-            
-            if (!senderName || !senderEmail || !senderMessage) {
-                console.error('index.html: Contact form validation failed - missing required fields');
-                alert('Please fill out all fields before sending.');
-                return;
-            }
-            
-            const recipientEmail = 'douglasseo.business@gmail.com';
-            const emailSubject = encodeURIComponent('Contact from ' + senderName + ' via douglasseo.com');
-            const emailBody = encodeURIComponent(
-                'Name: ' + senderName + '\n' +
-                'Email: ' + senderEmail + '\n\n' +
-                'Message:\n' + senderMessage
-            );
-            
-            const mailtoLink = 'mailto:' + recipientEmail + '?subject=' + emailSubject + '&body=' + emailBody;
-            
-            handleEmailClick(mailtoLink);
-        });
-
-        // Email client detection and copy functionality
-        function handleEmailClick(mailtoLink) {
-            const indicator = document.getElementById('email-indicator');
-            const opening = document.getElementById('email-opening');
-            const fallback = document.getElementById('email-fallback');
-            
-            // Show opening indicator
-            indicator.style.display = 'block';
-            opening.style.display = 'block';
-            fallback.style.display = 'none';
-            
-            // Try to open email client
-            window.location.href = mailtoLink;
-            
-            // Check if email client opened by monitoring window focus
-            let emailClientOpened = false;
-            let focusTimer;
-            
-            function onWindowBlur() {
-                emailClientOpened = true;
-                window.removeEventListener('blur', onWindowBlur);
-                clearTimeout(focusTimer);
-                
-                setTimeout(() => {
-                    indicator.style.display = 'none';
-                }, 1500);
-            }
-            
-            window.addEventListener('blur', onWindowBlur);
-            
-            // Fallback if no email client detected after 2 seconds
-            focusTimer = setTimeout(() => {
-                if (!emailClientOpened) {
-                    opening.style.display = 'none';
-                    fallback.style.display = 'block';
-                }
-                window.removeEventListener('blur', onWindowBlur);
-            }, 2000);
-        }
-
-        // Add click handler to email address
-        document.getElementById('email-address').addEventListener('click', function() {
-            const emailLink = 'mailto:douglasseo.business@gmail.com';
-            handleEmailClick(emailLink);
-        });
-
         // Copy email functionality
-        document.addEventListener('click', function(e) {
-            if (e.target.id === 'copy-email-btn') {
+        document.getElementById('email-address').addEventListener('click', function(e) {
                 const email = 'douglasseo.business@gmail.com';
                 
                 if (navigator.clipboard && window.isSecureContext) {
@@ -997,7 +703,7 @@
                 } else {
                     fallbackCopyEmail(email);
                 }
-            }
+            
         });
 
         function showCopySuccess() {
@@ -1068,141 +774,229 @@
             }
         });
 
-        // Three.js Dotted Surface Animation
+        // Three.js Dotted Surface Animation with fault-tolerant rendering
         function initDottedSurface() {
-            const container = document.getElementById('dottedSurface');
-            if (!container) return;
-
-            const SEPARATION = 150;
-            const AMOUNTX = 40;
-            const AMOUNTY = 60;
-
-            // Scene setup
-            const scene = new THREE.Scene();
-            scene.fog = new THREE.Fog(0xffffff, 2000, 10000);
-
-            const camera = new THREE.PerspectiveCamera(
-                60,
-                container.offsetWidth / container.offsetHeight,
-                1,
-                10000
-            );
-            camera.position.set(0, 355, 1220);
-
-            const renderer = new THREE.WebGLRenderer({
-                alpha: true,
-                antialias: true
-            });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(container.offsetWidth, container.offsetHeight);
-            renderer.setClearColor(scene.fog.color, 0);
-
-            container.appendChild(renderer.domElement);
-
-            // Create particles
-            const positions = [];
-            const colors = [];
-
-            // Create geometry for all particles
-            const geometry = new THREE.BufferGeometry();
-
-            for (let ix = 0; ix < AMOUNTX; ix++) {
-                for (let iy = 0; iy < AMOUNTY; iy++) {
-                    const x = ix * SEPARATION - (AMOUNTX * SEPARATION) / 2;
-                    const y = 0; // Will be animated
-                    const z = iy * SEPARATION - (AMOUNTY * SEPARATION) / 2;
-
-                    positions.push(x, y, z);
-                    // Use white/light colors for the gradient background
-                    colors.push(255, 255, 255);
-                }
-            }
-
-            geometry.setAttribute(
-                'position',
-                new THREE.Float32BufferAttribute(positions, 3)
-            );
-            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-            // Create material
-            const material = new THREE.PointsMaterial({
-                size: 8,
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.4,
-                sizeAttenuation: true
-            });
-
-            // Create points object
-            const points = new THREE.Points(geometry, material);
-            scene.add(points);
-
-            let count = 0;
-            let animationId;
-
-            // Animation function
-            function animate() {
-                animationId = requestAnimationFrame(animate);
-
-                const positionAttribute = geometry.attributes.position;
-                const positions = positionAttribute.array;
-
-                let i = 0;
-                for (let ix = 0; ix < AMOUNTX; ix++) {
-                    for (let iy = 0; iy < AMOUNTY; iy++) {
-                        const index = i * 3;
-
-                        // Animate Y position with sine waves
-                        positions[index + 1] =
-                            Math.sin((ix + count) * 0.3) * 50 +
-                            Math.sin((iy + count) * 0.5) * 50;
-
-                        i++;
-                    }
+            try {
+                // Verify Three.js is available
+                if (typeof THREE === 'undefined') {
+                    console.warn('Three.js not loaded, skipping dotted surface animation');
+                    return;
                 }
 
-                positionAttribute.needsUpdate = true;
-                renderer.render(scene, camera);
-                count += 0.1;
-            }
+                const container = document.getElementById('dottedSurface');
+                if (!container || !container.offsetWidth || !container.offsetHeight) {
+                    console.warn('Dotted surface container not ready or invalid dimensions');
+                    return;
+                }
 
-            // Handle window resize
-            function handleResize() {
-                camera.aspect = container.offsetWidth / container.offsetHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(container.offsetWidth, container.offsetHeight);
-            }
+                // Check WebGL support
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (!gl) {
+                    console.warn('WebGL not supported, skipping dotted surface animation');
+                    return;
+                }
 
-            window.addEventListener('resize', handleResize);
+                const SEPARATION = 150;
+                const AMOUNTX = Math.max(10, Math.min(40, Math.floor(container.offsetWidth / 30)));
+                const AMOUNTY = Math.max(15, Math.min(60, Math.floor(container.offsetHeight / 20)));
 
-            // Start animation
-            animate();
+                // Scene setup with error handling
+                let scene, camera, renderer, geometry, material, points;
+                let count = 0;
+                let animationId;
+                let isVisible = true;
+                let isInitialized = false;
 
-            // Store cleanup function
-            window.dottedSurfaceCleanup = function() {
-                window.removeEventListener('resize', handleResize);
-                cancelAnimationFrame(animationId);
-                
-                scene.traverse((object) => {
-                    if (object instanceof THREE.Points) {
-                        object.geometry.dispose();
-                        if (Array.isArray(object.material)) {
-                            object.material.forEach((material) => material.dispose());
-                        } else {
-                            object.material.dispose();
+                try {
+                    scene = new THREE.Scene();
+                    scene.fog = new THREE.Fog(0xffffff, 2000, 10000);
+
+                    camera = new THREE.PerspectiveCamera(
+                        60,
+                        container.offsetWidth / container.offsetHeight,
+                        1,
+                        10000
+                    );
+                    camera.position.set(0, 355, 1220);
+
+                    renderer = new THREE.WebGLRenderer({
+                        alpha: true,
+                        antialias: window.devicePixelRatio < 2,
+                        powerPreference: "low-power"
+                    });
+                    
+                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    renderer.setSize(container.offsetWidth, container.offsetHeight);
+                    renderer.setClearColor(scene.fog.color, 0);
+
+                    container.appendChild(renderer.domElement);
+                } catch (renderError) {
+                    console.warn('Failed to initialize Three.js renderer:', renderError);
+                    return;
+                }
+
+                // Create particles with error handling
+                try {
+                    const positions = [];
+                    const colors = [];
+
+                    geometry = new THREE.BufferGeometry();
+
+                    for (let ix = 0; ix < AMOUNTX; ix++) {
+                        for (let iy = 0; iy < AMOUNTY; iy++) {
+                            const x = ix * SEPARATION - (AMOUNTX * SEPARATION) / 2;
+                            const y = 0;
+                            const z = iy * SEPARATION - (AMOUNTY * SEPARATION) / 2;
+
+                            positions.push(x, y, z);
+                            colors.push(255, 255, 255);
+                           
                         }
                     }
-                });
-                
-                renderer.dispose();
-                if (container && renderer.domElement) {
-                    container.removeChild(renderer.domElement);
+
+                    geometry.setAttribute(
+                        'position',
+                        new THREE.Float32BufferAttribute(positions, 3)
+                    );
+                    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+                    material = new THREE.PointsMaterial({
+                        size: 10,
+                        vertexColors: true,
+                        transparent: true,
+                        opacity: 0.7,
+                        sizeAttenuation: true
+                    });
+
+                    points = new THREE.Points(geometry, material);
+                    scene.add(points);
+                    isInitialized = true;
+                } catch (geometryError) {
+                    console.warn('Failed to create dotted surface geometry:', geometryError);
+                    cleanup();
+                    return;
                 }
-            };
+
+                // Intersection Observer for performance optimization
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        isVisible = entry.isIntersecting;
+                    });
+                }, { threshold: 0.1 });
+
+                observer.observe(container);
+
+                // Optimized animation function
+                function animate() {
+                    if (!isInitialized || !isVisible) {
+                        animationId = requestAnimationFrame(animate);
+                        return;
+                    }
+
+                    try {
+                        const positionAttribute = geometry.attributes.position;
+                        const positions = positionAttribute.array;
+
+                        let i = 0;
+                        for (let ix = 0; ix < AMOUNTX; ix++) {
+                            for (let iy = 0; iy < AMOUNTY; iy++) {
+                                const index = i * 3;
+                                positions[index + 1] =
+                                    Math.sin((ix + count) * 0.3) * 50 +
+                                    Math.sin((iy + count) * 0.5) * 50;
+                                i++;
+                            }
+                        }
+
+                        positionAttribute.needsUpdate = true;
+                        renderer.render(scene, camera);
+                        count += 0.1;
+                    } catch (animationError) {
+                        console.warn('Animation error:', animationError);
+                    }
+
+                    animationId = requestAnimationFrame(animate);
+                }
+
+                // Enhanced resize handler
+                function handleResize() {
+                    if (!isInitialized || !container || !camera || !renderer) return;
+                    
+                    try {
+                        const width = container.offsetWidth;
+                        const height = container.offsetHeight;
+                        
+                        if (width > 0 && height > 0) {
+                            camera.aspect = width / height;
+                            camera.updateProjectionMatrix();
+                            renderer.setSize(width, height);
+                        }
+                    } catch (resizeError) {
+                        console.warn('Resize error:', resizeError);
+                    }
+                }
+
+                // Comprehensive cleanup function
+                function cleanup() {
+                    try {
+                        if (observer) observer.disconnect();
+                        window.removeEventListener('resize', handleResize);
+                        if (animationId) cancelAnimationFrame(animationId);
+                        
+                        if (scene) {
+                            scene.traverse((object) => {
+                                if (object.geometry) object.geometry.dispose();
+                                if (object.material) {
+                                    if (Array.isArray(object.material)) {
+                                        object.material.forEach((material) => material.dispose());
+                                    } else {
+                                        object.material.dispose();
+                                    }
+                                }
+                            });
+                            scene.clear();
+                        }
+                        
+                        if (renderer) {
+                            renderer.dispose();
+                            renderer.forceContextLoss();
+                            if (container && renderer.domElement && container.contains(renderer.domElement)) {
+                                container.removeChild(renderer.domElement);
+                            }
+                        }
+
+                        isInitialized = false;
+                    } catch (cleanupError) {
+                        console.warn('Cleanup error:', cleanupError);
+                    }
+                }
+
+                window.addEventListener('resize', handleResize);
+                window.addEventListener('beforeunload', cleanup);
+
+                // Start animation
+                animate();
+
+                // Store cleanup function globally
+                window.dottedSurfaceCleanup = cleanup;
+
+            } catch (initError) {
+                console.warn('Failed to initialize dotted surface:', initError);
+            }
         }
 
-        // Initialize dotted surface when page loads
-        document.addEventListener('DOMContentLoaded', initDottedSurface);
+        // Safe initialization with multiple fallbacks
+        function safeDottedSurfaceInit() {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initDottedSurface);
+            } else {
+                // DOM already loaded, but wait a bit for Three.js to be available
+                setTimeout(initDottedSurface, 100);
+            }
+        }
+
+        safeDottedSurfaceInit();
     </script>
 </body>
 </html>
