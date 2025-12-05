@@ -4,10 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Douglas Seo - Software Engineer & Entrepreneur</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <meta name="description" content="Software Engineer & Entrepreneur">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    
+    <!-- Open Graph / Social Media Preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://douglasseo.com/">
+    <meta property="og:title" content="Douglas Seo - Software Engineer & Entrepreneur">
+    <meta property="og:description" content="UC Berkeley EECS grad with a passion for building impactful products. Founder of Popper LLC, Co-founder of Bashnota.">
+    <meta property="og:image" content="https://douglasseo.com/public/optimized/profile_image.webp">
+    
+    <!-- Twitter Card -->
+    <meta property="twitter:card" content="summary">
+    <meta property="twitter:url" content="https://douglasseo.com/">
+    <meta property="twitter:title" content="Douglas Seo - Software Engineer & Entrepreneur">
+    <meta property="twitter:description" content="UC Berkeley EECS grad with a passion for building impactful products. Founder of Popper LLC, Co-founder of Bashnota.">
+    <meta property="twitter:image" content="https://douglasseo.com/public/optimized/profile_image.webp">
     <style>
         * {
             margin: 0;
@@ -72,8 +88,34 @@
         .hero {
             text-align: center;
             padding: 6rem 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: white;
+            color: #333;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle at center, #93c5fd, transparent);
+        }
+        
+        .dotted-surface {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .hero .container {
+            position: relative;
+            z-index: 2;
         }
         
         .hero h1 {
@@ -109,13 +151,13 @@
         
         .btn-outline {
             background: transparent;
-            color: white;
-            border: 2px solid white;
+            color: #333;
+            border: 2px solid #333;
         }
         
         .btn-outline:hover {
-            background: white;
-            color: #333;
+            background: #333;
+            color: white;
         }
         
         .section-title {
@@ -306,7 +348,145 @@
             opacity: 0.7;
         }
         
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 1.5rem;
+            display: block;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .about-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .about-text {
+            flex: 1;
+        }
+        
+        .about-image {
+            width: 200px;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+        
+        .project-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+        }
+        
+        .company-logo {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            margin-right: 0.75rem;
+            vertical-align: middle;
+            border-radius: 4px;
+        }
+        
+        /* PDF Preview Modal */
+        .pdf-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        
+        .pdf-modal-content {
+            position: relative;
+            background-color: white;
+            margin: 2% auto;
+            width: 90%;
+            max-width: 800px;
+            height: 90%;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .pdf-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e5e5;
+            background-color: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .pdf-modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .pdf-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+        
+        .pdf-modal-close:hover {
+            background-color: #e5e5e5;
+        }
+        
+        .pdf-modal-body {
+            flex: 1;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .pdf-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .pdf-modal-footer {
+            padding: 1rem;
+            border-top: 1px solid #e5e5e5;
+            background-color: #f8f9fa;
+            text-align: center;
+            border-radius: 0 0 8px 8px;
+        }
+        
         @media (max-width: 768px) {
+            .about-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .about-image {
+                width: 150px;
+                height: 180px;
+                order: -1;
+            }
             .hero h1 {
                 font-size: 2rem;
             }
@@ -342,13 +522,20 @@
 
     <main>
         <section class="hero">
+            <div class="dotted-surface" id="dottedSurface"></div>
             <div class="container">
+                <img src="/public/optimized/profile_image.webp" alt="Douglas Seo" class="profile-image">
                 <h1>Douglas Seo</h1>
                 <p>Software Engineer & Entrepreneur</p>
                 <p>UC Berkeley EECS • Building impactful products</p>
                 <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                     <a href="#contact" class="btn btn-primary">Get In Touch</a>
-                    <a href="/DouglasSeo_FullStackSoftwareEngineer.pdf" class="btn btn-outline" target="_blank">Download Resume</a>
+                    <button onclick="openPdfModal('/public/Douglas_Seo_Resume_AI_Research.pdf', 'AI Research Resume')" class="btn btn-outline">
+                        Preview Resume
+                    </button>
+                    <a href="/public/Douglas_Seo_Resume_AI_Research.pdf" class="btn btn-outline" target="_blank" download>
+                        Download Resume
+                    </a>
                 </div>
             </div>
         </section>
@@ -359,16 +546,19 @@
                     <h2>About Me</h2>
                     <p>UC Berkeley EECS grad with a passion for building impactful products</p>
                 </div>
-                <div style="max-width: 800px; margin: 0 auto;">
-                    <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
-                        I'm a creative, impact-driven engineer with startup grit. As the founder of Popper LLC, I focus on building real-time applications, cloud-native systems, and AI interfaces that bridge digital and real-world value.
-                    </p>
-                    <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
-                        My technical expertise spans full-stack development, with a particular focus on React, React Native, Node.js, Python, and cloud infrastructure. I'm passionate about creating software that solves real problems and delivers tangible value to users.
-                    </p>
-                    <p style="font-size: 1.1rem;">
-                        When I'm not coding, you can find me exploring new technologies, mentoring aspiring developers, or enjoying the vibrant tech scene in San Francisco. I'm always open to discussing new ideas and potential collaborations.
-                    </p>
+                <div class="about-content">
+                    <div class="about-text">
+                        <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
+                            I'm a creative, impact-driven engineer with startup grit. As the founder of Popper LLC, I focus on building real-time applications, cloud-native systems, and AI interfaces that bridge digital and real-world value.
+                        </p>
+                        <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
+                            My technical expertise spans full-stack development, with a particular focus on React, React Native, Node.js, Python, and cloud infrastructure. I'm passionate about creating software that solves real problems and delivers tangible value to users.
+                        </p>
+                        <p style="font-size: 1.1rem;">
+                            When I'm not coding, you can find me exploring new technologies, mentoring aspiring developers, or enjoying the vibrant tech scene in San Francisco. I'm always open to discussing new ideas and potential collaborations.
+                        </p>
+                    </div>
+                    <img src="/public/optimized/doug_grad_with_bear.webp" alt="Douglas at UC Berkeley graduation" class="about-image">
                 </div>
             </div>
         </section>
@@ -408,6 +598,7 @@
                 </div>
                 <div class="grid grid-2">
                     <div class="card">
+                        <img src="/public/bashnota-logo.svg" alt="Bashnota logo" class="project-logo">
                         <h3 style="margin-bottom: 1rem;">Bashnota</h3>
                         <p style="margin-bottom: 1rem; color: #666;">Co-founded and developing the world's best tool for computational research, combining Jupyter notebooks with a Notion-style UI/UX and built-in AI agents.</p>
                         <div class="tech-stack">
@@ -417,6 +608,7 @@
                         </div>
                     </div>
                     <div class="card">
+                        <img src="/public/werkflow-logo.png" alt="Werkflow logo" class="project-logo">
                         <h3 style="margin-bottom: 1rem;">Werkflow</h3>
                         <p style="margin-bottom: 1rem; color: #666;">All-in-one software platform for dancers, helping them manage their community, finances, and turn their passion into a career. Employee #1 and lead developer.</p>
                         <div class="tech-stack">
@@ -426,6 +618,7 @@
                         </div>
                     </div>
                     <div class="card">
+                        <img src="/public/optimized/popper-logo.webp" alt="Popper logo" class="project-logo">
                         <h3 style="margin-bottom: 1rem;">Popper LLC</h3>
                         <p style="margin-bottom: 1rem; color: #666;">Social rewards app with 1.1k+ users and 60+ partner businesses. Founded and developed the entire platform.</p>
                         <div class="tech-stack">
@@ -435,6 +628,7 @@
                         </div>
                     </div>
                     <div class="card">
+                        <img src="/public/optimized/HazeIcon.webp" alt="CurlyHair.ai logo" class="project-logo">
                         <h3 style="margin-bottom: 1rem;">CurlyHair.ai</h3>
                         <p style="margin-bottom: 1rem; color: #666;">AI platform that helps users understand and care for their curly hair through personalized recommendations and routines.</p>
                         <div class="tech-stack">
@@ -512,7 +706,7 @@
                     
                     <div class="experience-item">
                         <div class="job-header">
-                            <div class="job-title">Co-Founder at Bashnota</div>
+                            <div class="job-title"><img src="/public/azetta-logo.svg" alt="Bashnota logo" class="company-logo">Co-Founder at Azetta AI - Cosma</div>
                             <div class="job-date">2024 - Present</div>
                         </div>
                         <div class="job-description">
@@ -522,7 +716,7 @@
                     
                     <div class="experience-item">
                         <div class="job-header">
-                            <div class="job-title">Software Engineer (Employee #1) at Werkflow</div>
+                            <div class="job-title"><img src="/public/werkflow-logo.png" alt="Werkflow logo" class="company-logo">Software Engineer (Employee #1) at Werkflow</div>
                             <div class="job-date">2024 - Present</div>
                         </div>
                         <div class="job-description">
@@ -532,7 +726,7 @@
                     
                     <div class="experience-item">
                         <div class="job-header">
-                            <div class="job-title">Founder & CEO at Popper LLC</div>
+                            <div class="job-title"><img src="/public/optimized/popper-logo.webp" alt="Popper logo" class="company-logo">Founder & CEO at Popper LLC</div>
                             <div class="job-date">2022 - 2024</div>
                         </div>
                         <div class="job-description">
@@ -552,7 +746,7 @@
                     
                     <div class="experience-item">
                         <div class="job-header">
-                            <div class="job-title">Software Engineering Intern at Chirp Microsystems (TDK)</div>
+                            <div class="job-title"><img src="/public/chirp-microsystems.jpg" alt="Chirp Microsystems logo" class="company-logo">Software Engineering Intern at Chirp Microsystems (TDK)</div>
                             <div class="job-date">2019</div>
                         </div>
                         <div class="job-description">
@@ -652,6 +846,24 @@
         </div>
     </footer>
 
+    <!-- PDF Preview Modal -->
+    <div id="pdfModal" class="pdf-modal">
+        <div class="pdf-modal-content">
+            <div class="pdf-modal-header">
+                <h3 class="pdf-modal-title">Resume Preview</h3>
+                <button class="pdf-modal-close" onclick="closePdfModal()">&times;</button>
+            </div>
+            <div class="pdf-modal-body">
+                <iframe id="pdfFrame" class="pdf-frame" src=""></iframe>
+            </div>
+            <div class="pdf-modal-footer">
+                <a id="pdfDownloadLink" href="" target="_blank" class="btn btn-primary" download>
+                    Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Minimal JavaScript for smooth scrolling and form handling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -670,6 +882,183 @@
             alert('Thank you for your message! I\'ll get back to you soon.');
             this.reset();
         });
+
+        // PDF Modal Functions
+        function openPdfModal(pdfUrl, title = 'Resume Preview') {
+            const modal = document.getElementById('pdfModal');
+            const frame = document.getElementById('pdfFrame');
+            const downloadLink = document.getElementById('pdfDownloadLink');
+            const modalTitle = document.querySelector('.pdf-modal-title');
+            
+            modalTitle.textContent = title;
+            frame.src = pdfUrl;
+            downloadLink.href = pdfUrl;
+            modal.style.display = 'block';
+            
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePdfModal() {
+            const modal = document.getElementById('pdfModal');
+            const frame = document.getElementById('pdfFrame');
+            
+            modal.style.display = 'none';
+            frame.src = '';
+            
+            // Re-enable body scroll
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal when clicking outside of it
+        document.getElementById('pdfModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePdfModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePdfModal();
+            }
+        });
+
+        // Three.js Dotted Surface Animation
+        function initDottedSurface() {
+            const container = document.getElementById('dottedSurface');
+            if (!container) return;
+
+            const SEPARATION = 150;
+            const AMOUNTX = 40;
+            const AMOUNTY = 60;
+
+            // Scene setup
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0xffffff, 2000, 10000);
+
+            const camera = new THREE.PerspectiveCamera(
+                60,
+                container.offsetWidth / container.offsetHeight,
+                1,
+                10000
+            );
+            camera.position.set(0, 355, 1220);
+
+            const renderer = new THREE.WebGLRenderer({
+                alpha: true,
+                antialias: true
+            });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(container.offsetWidth, container.offsetHeight);
+            renderer.setClearColor(scene.fog.color, 0);
+
+            container.appendChild(renderer.domElement);
+
+            // Create particles
+            const positions = [];
+            const colors = [];
+
+            // Create geometry for all particles
+            const geometry = new THREE.BufferGeometry();
+
+            for (let ix = 0; ix < AMOUNTX; ix++) {
+                for (let iy = 0; iy < AMOUNTY; iy++) {
+                    const x = ix * SEPARATION - (AMOUNTX * SEPARATION) / 2;
+                    const y = 0; // Will be animated
+                    const z = iy * SEPARATION - (AMOUNTY * SEPARATION) / 2;
+
+                    positions.push(x, y, z);
+                    // Use white/light colors for the gradient background
+                    colors.push(255, 255, 255);
+                }
+            }
+
+            geometry.setAttribute(
+                'position',
+                new THREE.Float32BufferAttribute(positions, 3)
+            );
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            // Create material
+            const material = new THREE.PointsMaterial({
+                size: 8,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.4,
+                sizeAttenuation: true
+            });
+
+            // Create points object
+            const points = new THREE.Points(geometry, material);
+            scene.add(points);
+
+            let count = 0;
+            let animationId;
+
+            // Animation function
+            function animate() {
+                animationId = requestAnimationFrame(animate);
+
+                const positionAttribute = geometry.attributes.position;
+                const positions = positionAttribute.array;
+
+                let i = 0;
+                for (let ix = 0; ix < AMOUNTX; ix++) {
+                    for (let iy = 0; iy < AMOUNTY; iy++) {
+                        const index = i * 3;
+
+                        // Animate Y position with sine waves
+                        positions[index + 1] =
+                            Math.sin((ix + count) * 0.3) * 50 +
+                            Math.sin((iy + count) * 0.5) * 50;
+
+                        i++;
+                    }
+                }
+
+                positionAttribute.needsUpdate = true;
+                renderer.render(scene, camera);
+                count += 0.1;
+            }
+
+            // Handle window resize
+            function handleResize() {
+                camera.aspect = container.offsetWidth / container.offsetHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+            }
+
+            window.addEventListener('resize', handleResize);
+
+            // Start animation
+            animate();
+
+            // Store cleanup function
+            window.dottedSurfaceCleanup = function() {
+                window.removeEventListener('resize', handleResize);
+                cancelAnimationFrame(animationId);
+                
+                scene.traverse((object) => {
+                    if (object instanceof THREE.Points) {
+                        object.geometry.dispose();
+                        if (Array.isArray(object.material)) {
+                            object.material.forEach((material) => material.dispose());
+                        } else {
+                            object.material.dispose();
+                        }
+                    }
+                });
+                
+                renderer.dispose();
+                if (container && renderer.domElement) {
+                    container.removeChild(renderer.domElement);
+                }
+            };
+        }
+
+        // Initialize dotted surface when page loads
+        document.addEventListener('DOMContentLoaded', initDottedSurface);
     </script>
 </body>
 </html>
