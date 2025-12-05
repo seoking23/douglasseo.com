@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Douglas Seo - Personal Website
 
-## Getting Started
+A simple, fast static HTML website showcasing my work as a Software Engineer & Entrepreneur.
 
-First, run the development server:
+## Quick Start
+
+### Running Locally
+
+Start a local server:
 
 ```bash
 npm run dev
 # or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+python3 -m http.server 8000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit `http://localhost:8000` to view the site.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Building for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The site is already built as static HTML files. Simply upload the files to any web server or static hosting service.
 
-## Learn More
+```bash
+npm run build  # Just confirms the build is complete
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+├── index.html          # Main homepage
+├── blog/               # Blog posts (HTML)
+│   ├── index.html     # Blog listing page
+│   └── *.html         # Individual blog posts
+├── package.json       # Project metadata and scripts
+└── README.md          # This file
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Features
 
-## Deploy on Vercel
+- **Pure HTML/CSS/JS** - No build process required, fast loading
+- **Responsive Design** - Works on all devices
+- **Blog Integration** - Static HTML blog posts
+- **Contact Form** - Simple contact form with JavaScript
+- **SEO Optimized** - Meta tags and semantic HTML
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This static site can be deployed to any hosting service:
+
+- **Netlify**: Drag and drop the folder
+- **Vercel**: Connect your Git repository
+- **GitHub Pages**: Push to a GitHub repository
+- **Any web server**: Upload the HTML files
+
+## Development
+
+The site uses vanilla HTML, CSS, and JavaScript for maximum compatibility and performance. No complex build tools or frameworks required.
+
+### Adding Blog Posts
+
+1. Create a new HTML file in the `blog/` directory
+2. Follow the existing blog post structure
+3. Update the blog index (`blog/index.html`) with the new post
+
+## License
+
+© 2024 Douglas Seo. All rights reserved.
