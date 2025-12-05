@@ -1,6 +1,6 @@
 # Douglas Seo - Personal Website
 
-A simple, fast static HTML website showcasing my work as a Software Engineer & Entrepreneur.
+A simple, fast static HTML website showcasing my work as an AI Software Engineer & Entrepreneur.
 
 ## Quick Start
 
