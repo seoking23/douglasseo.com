@@ -82,7 +82,7 @@
         }
         
         section {
-            padding: 4rem 0;
+            padding: 1rem 0;
             position: relative;
             z-index: 2;
         }
@@ -94,7 +94,7 @@
         }
         
         :root {
-            --scroll-gradient: radial-gradient(circle  at top center, transparent, #93c5fd);
+            --scroll-gradient: radial-gradient(circle at top center, transparent, #93c5fd);
         }
 
         main::before {
@@ -111,8 +111,8 @@
 
         .hero {
             text-align: center;
-            padding: 2rem 0;
-            margin-bottom: 6rem;
+            padding: 4rem 0;
+            margin-bottom: 4rem;
             background: transparent;
             color: inherit;
             position: relative;
@@ -248,6 +248,10 @@
             color: inherit;
             cursor: pointer;
         }
+        .experience-item-clickable:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
         
         .card-clickable:hover {
             text-decoration: none;
@@ -349,7 +353,6 @@
         }
         
         footer {
-            color: black;
             text-align: center;
             padding: 2rem 0;
         }
@@ -361,13 +364,12 @@
             margin-bottom: 1rem;
         }
         
-        .social-links a {
+        .footer-link {
             color: black;
             text-decoration: none;
-            transition: opacity 0.3s;
+            transition: opacity 0.1s;
         }
-        
-        .social-links a:hover {
+        .footer-link:hover {
             opacity: 0.7;
         }
         
@@ -638,6 +640,9 @@
                         </div>
                     </div>
                 </div>
+                <div style = "text-align: center;">
+                    <p onclick="openPdfModal('/public/Douglas_Seo_Resume_AI_Research.pdf', 'Resume Preview')" style="cursor: pointer; text-decoration: none;">Résumé/CV</p>
+                </div>
             </div>
         </section>
 
@@ -646,18 +651,18 @@
     <footer>
         <div class="container">
             <div class="social-links">
-                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #66a7e8;">GitHub</a>
-                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #66a7e8;">Twitter</a>
-                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #66a7e8;">Instagram</a>
-                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #66a7e8;">LinkedIn</a>
+                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
+                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
+                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
             
             </div>
             <div class="social-links">
-                <a href="tel:7079539522" style="cursor: pointer; text-decoration: none; color: #66a7e8;">Call Me</a>
+                <a href="tel:7079539522" class="footer-link">Call Me</a>
                 <span style="margin: 0 0.5rem; color: #ccc;">|</span>
-                <a href="sms:7079539522" style="cursor: pointer; text-decoration: none; color: #66a7e8;">Text Me</a>
+                <a href="sms:7079539522" class="footer-link">Text Me</a>
                 <span style="color: #ccc;">|</span>
-                <a id="email-address" href="mailto:douglasseo.business@gmail.com" style="cursor: pointer; text-decoration: none; color: #66a7e8;">Email Me</a>
+                <a id="email-address" href="mailto:douglasseo.business@gmail.com" class="footer-link"  >Email Me</a>
             </div>
         </div>
     </footer>
