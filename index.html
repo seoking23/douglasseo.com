@@ -833,7 +833,7 @@
                         </div>
                         
                         <p style="color: #666;">
-                            I'm currently open to freelance opportunities and interesting projects
+                            I'm currently open to onboarding new users to Azetta AI - Cosma, as well as anyone interested in the Machine Learning space.
                         </p>
                     </div>
                 </div>
@@ -883,11 +883,35 @@
             });
         });
 
-        // Simple form handling
-        document.querySelector('form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            alert('Thank you for your message! I\'ll get back to you soon.');
-            this.reset();
+        // Contact form mailto handling
+        document.querySelector('.contact-form').addEventListener('submit', function(contactFormSubmitEvent) {
+            contactFormSubmitEvent.preventDefault();
+            
+            const senderNameInput = document.getElementById('name');
+            const senderEmailInput = document.getElementById('email');
+            const senderMessageInput = document.getElementById('message');
+            
+            const senderName = senderNameInput.value.trim();
+            const senderEmail = senderEmailInput.value.trim();
+            const senderMessage = senderMessageInput.value.trim();
+            
+            if (!senderName || !senderEmail || !senderMessage) {
+                console.error('index.html: Contact form validation failed - missing required fields');
+                alert('Please fill out all fields before sending.');
+                return;
+            }
+            
+            const recipientEmail = 'douglasseo.business@gmail.com';
+            const emailSubject = encodeURIComponent('Contact from ' + senderName + ' via douglasseo.com');
+            const emailBody = encodeURIComponent(
+                'Name: ' + senderName + '\n' +
+                'Email: ' + senderEmail + '\n\n' +
+                'Message:\n' + senderMessage
+            );
+            
+            const mailtoLink = 'mailto:' + recipientEmail + '?subject=' + emailSubject + '&body=' + emailBody;
+            
+            window.location.href = mailtoLink;
         });
 
         // PDF Modal Functions
