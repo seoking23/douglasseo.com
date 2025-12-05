@@ -1,5 +1,9 @@
 {
   "name": "douglasseo.com",
   "version": "0.1.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "build": "echo 'Static site - no build required'",
+    "dev": "npx serve"
+  }
 }
