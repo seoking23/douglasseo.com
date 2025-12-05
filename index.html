@@ -814,7 +814,30 @@
                         
                         <div style="margin-bottom: 1.5rem;">
                             <div style="font-weight: 500; margin-bottom: 0.5rem;">Email</div>
-                            <div style="color: #666;">douglasseo.business@gmail.com</div>
+                            <div style="color: #666;">
+                                <span id="email-address" style="cursor: pointer; text-decoration: underline; color: #0066cc;">douglasseo.business@gmail.com</span>
+                                <div id="email-indicator" style="margin-top: 0.5rem; font-size: 0.9rem; display: none;">
+                                    <div id="email-opening" style="color: #0066cc; display: none;">
+                                        📧 Opening email client...
+                                    </div>
+                                    <div id="email-fallback" style="color: #666; display: none;">
+                                        <span>Email client not detected. </span>
+                                        <button id="copy-email-btn" style="background: none; border: 1px solid #0066cc; color: #0066cc; padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.8rem; cursor: pointer;">
+                                            Copy Email
+                                        </button>
+                                        <span id="copy-success" style="color: #28a745; margin-left: 0.5rem; display: none;">Copied!</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="font-weight: 500; margin-bottom: 0.5rem;">Phone</div>
+                            <div style="color: #666;">
+                                <a href="tel:7079539522" style="cursor: pointer; text-decoration: underline; color: #0066cc;">707.953.9522</a>
+                                <span style="margin: 0 0.5rem; color: #ccc;">|</span>
+                                <a href="sms:7079539522" style="cursor: pointer; text-decoration: underline; color: #0066cc; font-size: 0.9rem;">Text</a>
+                            </div>
                         </div>
                         
                         <div style="margin-bottom: 1.5rem;">
@@ -911,8 +934,98 @@
             
             const mailtoLink = 'mailto:' + recipientEmail + '?subject=' + emailSubject + '&body=' + emailBody;
             
-            window.location.href = mailtoLink;
+            handleEmailClick(mailtoLink);
         });
+
+        // Email client detection and copy functionality
+        function handleEmailClick(mailtoLink) {
+            const indicator = document.getElementById('email-indicator');
+            const opening = document.getElementById('email-opening');
+            const fallback = document.getElementById('email-fallback');
+            
+            // Show opening indicator
+            indicator.style.display = 'block';
+            opening.style.display = 'block';
+            fallback.style.display = 'none';
+            
+            // Try to open email client
+            window.location.href = mailtoLink;
+            
+            // Check if email client opened by monitoring window focus
+            let emailClientOpened = false;
+            let focusTimer;
+            
+            function onWindowBlur() {
+                emailClientOpened = true;
+                window.removeEventListener('blur', onWindowBlur);
+                clearTimeout(focusTimer);
+                
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 1500);
+            }
+            
+            window.addEventListener('blur', onWindowBlur);
+            
+            // Fallback if no email client detected after 2 seconds
+            focusTimer = setTimeout(() => {
+                if (!emailClientOpened) {
+                    opening.style.display = 'none';
+                    fallback.style.display = 'block';
+                }
+                window.removeEventListener('blur', onWindowBlur);
+            }, 2000);
+        }
+
+        // Add click handler to email address
+        document.getElementById('email-address').addEventListener('click', function() {
+            const emailLink = 'mailto:douglasseo.business@gmail.com';
+            handleEmailClick(emailLink);
+        });
+
+        // Copy email functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'copy-email-btn') {
+                const email = 'douglasseo.business@gmail.com';
+                
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(email).then(() => {
+                        showCopySuccess();
+                    }).catch(() => {
+                        fallbackCopyEmail(email);
+                    });
+                } else {
+                    fallbackCopyEmail(email);
+                }
+            }
+        });
+
+        function showCopySuccess() {
+            const successMsg = document.getElementById('copy-success');
+            successMsg.style.display = 'inline';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 2000);
+        }
+
+        function fallbackCopyEmail(email) {
+            const textArea = document.createElement('textarea');
+            textArea.value = email;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-9999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopySuccess();
+            } catch (err) {
+                alert('Failed to copy email. Please copy manually: ' + email);
+            }
+            
+            document.body.removeChild(textArea);
+        }
 
         // PDF Modal Functions
         function openPdfModal(pdfUrl, title = 'Resume Preview') {
