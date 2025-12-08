@@ -112,7 +112,7 @@ def create_resume():
         subsection_header
     ))
     story.append(Paragraph(
-        "• <b>CS 188-189 (Artificial Intelligence & Machine Learning):</b> Top 5% of class with Professor recognition",
+        "• <b>CS 188-189 (Artificial Intelligence & Machine Learning):</b> Top 5% of class with Professor Jonathon Shewchuk's recognition",
         bullet_style
     ))
     story.append(Paragraph(
