@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Gravity of Learning - Douglas Seo</title>
+    <meta name="description" content="Machine learning borrows its vocabulary from biology. Physics might be the more honest model.">
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="/public/css/base.css">
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
+    <link rel="stylesheet" href="/public/css/blog.css">
+</head>
+<body>
+    <main>
+        <div class="dotted-surface" id="dottedSurface"></div>
+        <div class="blog-layout">
+            <aside class="blog-side-nav">
+                <a href="/#writing" class="back-link">← Back to home</a>
+                <h2 class="side-nav-title">Contents</h2>
+                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
+                <nav class="side-nav-list">
+                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
+                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
+                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
+                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
+                    <a href="/blog/building-in-public.html">5. Building in Public</a>
+                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
+                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
+                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
+                    <a href="/blog/the-gravity-of-learning.html" class="side-nav-active">9. The Gravity of Learning</a>
+                </nav>
+            </aside>
+            <div class="blog-main">
+                <div class="article-container">
+            <a href="/blog/" class="back-link">← Table of Contents</a>
+
+            <div class="article-header">
+                <div class="chapter-label">Chapter 9</div>
+                <h1 class="article-title">The Gravity of Learning</h1>
+                <div class="article-meta">
+                    <time datetime="2026-02-18">February 18, 2026</time>
+                    <span>•</span>
+                    <span>8 min read</span>
+                </div>
+            </div>
+
+            <div class="article-content">
+                <p class="lead">
+                    Machine learning borrows its vocabulary from biology — neurons, weights, layers, networks. The math underneath it is linear algebra. But the thing it might actually be describing is physics. Specifically: gravity.
+                </p>
+
+                <h2>What Berkeley Taught</h2>
+
+                <p>
+                    CS 189 at Berkeley is the standard introduction to machine learning. It is a rigorous course and it will teach you the techniques: random forests, decision trees, gradient descent, convolutional neural networks, transformers. You will learn how each one works mathematically. You will learn when to apply each one. You will become, in the language of the field, proficient.
+                </p>
+
+                <p>
+                    What the course does not fully answer — what most introductions to machine learning do not fully answer — is why any of this should work. Not mechanically. Mechanically it's clear: we define a loss function, we take derivatives, we move in the direction that makes the loss smaller, we repeat until it stops improving meaningfully. The optimization is coherent. The mathematics is sound.
+                </p>
+
+                <p>
+                    But "minimize arbitrary loss" is a description of a procedure, not an explanation of a phenomenon. What is actually happening when a model learns? What does it mean for a system with no understanding to produce outputs that behave as if it has one? The techniques answer the "how." The deeper question — the one that stays with you if you sit with it long enough — is closer to "what is this."
+                </p>
+
+                <h2>The Borrowed Language</h2>
+
+                <p>
+                    The vocabulary of machine learning is borrowed from biology, and the borrowing is imprecise in ways worth noticing. A "neural network" is not a network of neurons. It is a deep composition of matrix multiplications with nonlinearities applied between them. The word "neuron" describes a node in that computation — a scalar value after activation — not a biological cell with electrochemical behavior. A "weight" is a parameter in a matrix, a number adjusted during training. We call it a weight to suggest that it carries significance, that some connections matter more than others.
+                </p>
+
+                <p>
+                    None of this is wrong. The analogy was useful when the field was young — it gave researchers an intuition to build from, a way to talk about structure before the mathematics was fully formalized. But analogies carry hidden assumptions, and the biological framing has shaped how we think about what these systems are doing in ways that may not serve us. We describe model capacity in terms of "neurons" as if more neurons means more intelligence, when what it actually means is more parameters — more dimensions in the space the model is operating over.
+                </p>
+
+                <p>
+                    The language makes machine learning sound like neuroscience. The math makes it look like geometry. Neither framing fully captures what it seems to actually be.
+                </p>
+
+                <h2>The Gravity of Learning</h2>
+
+                <p>
+                    Whether we are doing so deliberately, the project of machine learning is an attempt to describe the gravity of learning — the force that pulls representation toward truth, the mechanism by which a system exposed to enough interaction with the world begins to model it. We just haven't reached for physics as the framework. We've been working in the language of biology and optimization, and those tools are powerful, but they may be describing the surface of something whose deeper nature is physical.
+                </p>
+
+                <p>
+                    Consider what gravity actually is: a curvature in spacetime caused by the presence of mass. Objects with mass attract each other not through any direct force but because their presence bends the space between them. The more mass, the more curvature. The closer the proximity, the stronger the effect. What appears to be a pull is actually the shape of the geometry — objects following the straightest possible path through a curved space.
+                </p>
+
+                <p>
+                    Now consider what a trained model does. It has been exposed to a distribution of data — interactions, tokens, examples, labels — each carrying a kind of mass proportional to its significance and frequency. Through training, the model develops a representation of the space those interactions describe. The weights are not arbitrary numbers. They are the curvature of the learned geometry. When the model makes a prediction, it is not retrieving information — it is following the path of least resistance through a space shaped by everything it has encountered.
+                </p>
+
+                <p>
+                    That is not so different from gravity. What it is, precisely, is a geometry learned from mass.
+                </p>
+
+                <h2>Treating Each Interaction as Matter</h2>
+
+                <p>
+                    The implication is specific: if we want to understand learning more deeply, we might gain from treating each interaction in the training space not as a data point but as matter — as an object with mass, position, and influence on the geometry around it.
+                </p>
+
+                <p>
+                    In a gravitational system, the distribution of mass determines the shape of space. Objects cluster not randomly but along the gradients created by that mass distribution. Stable configurations emerge — orbits, attractors, systems in equilibrium. The structure is not imposed; it is discovered. The geometry tells matter where to go, and matter tells the geometry how to curve.
+                </p>
+
+                <p>
+                    Training data has this property too. Certain examples exert more influence on the learned representation than others — the high-frequency, high-salience interactions shape the geometry more than the rare or marginal ones. The model's weights settle into a configuration that reflects the mass distribution of the training data, not by design but by the mechanics of the optimization. Gradient descent is not so much a search as it is a path through a landscape shaped by mass.
+                </p>
+
+                <p>
+                    What we haven't done is formalize this. We haven't asked: what are the units of mass in a learning system? What is the equivalent of distance? What is the nature of the curvature, and can we calculate it directly rather than discovering it empirically through training runs and loss curves? Physics has tools for this — differential geometry, tensor calculus, field theory. They have not been seriously applied to the structure of learning, at least not in the ways the field has organized itself.
+                </p>
+
+                <h2>The Open Question</h2>
+
+                <p>
+                    I am not proposing a theory. I am naming a direction.
+                </p>
+
+                <p>
+                    The field of machine learning is extraordinarily good at building systems that work. What it has not fully developed is a physics of learning — a principled, calculable account of why these systems converge to representations that generalize, what determines the shape of the space they learn, and how the distribution of training experience maps to the structure of the model that emerges. We have the techniques. We lack the framework that would let us reason about them the way physicists reason about forces and fields.
+                </p>
+
+                <p>
+                    The biological vocabulary gave us the intuitions that launched the field. Linear algebra gave us the tools to build it. The next conceptual frame — if there is one — might come from treating the data not as samples from a distribution but as matter in a space, and asking what laws govern the geometry that learning produces.
+                </p>
+
+                <p>
+                    If each interaction is matter, and matter determines the shape of the space, and the space is what a model learns — then maybe the secret is not in the optimization algorithm or the architecture or the loss function. Maybe the secret is in understanding the gravity: the invisible structure that pulls representation toward truth, that makes certain configurations stable and others transient, that explains why a system trained long enough on enough of the world begins, however imperfectly, to reflect it.
+                </p>
+
+                <p>
+                    We have been describing that force with the wrong vocabulary. The math to describe it correctly may already exist. Someone just needs to point it in the right direction.
+                </p>
+
+                <nav class="chapter-navigation">
+                    <a href="/blog/vibe-coding-a-website-from-scratch.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Previous chapter</span>
+                        <span>← Chapter 8: Vibe-Coding a Website</span>
+                    </a>
+                    <span></span>
+                </nav>
+            </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="social-links">
+                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
+                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
+                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
+            </div>
+            <p>&copy; 2026 Douglas Seo. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/public/js/dotted-surface.js"></script>
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

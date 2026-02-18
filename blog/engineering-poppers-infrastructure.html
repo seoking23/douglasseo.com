@@ -31,6 +31,7 @@
                     <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
                     <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
                     <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
+                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
                 </nav>
             </aside>
             <div class="blog-main">
@@ -49,13 +50,120 @@
 
             <div class="article-content">
                 <p class="lead">
-                    A deep dive into the technical architecture behind Popper, including our approach to scalability and real-time synchronization.
+                    We built Popper's entire backend before Claude Code existed. Before Cursor. Before any of the AI-assisted development tools that make this kind of work faster today. What we had was Reddit, Stack Overflow, early ChatGPT, and my CTO Matthew Niculae. This is what we learned the hard way.
                 </p>
 
-                <div class="coming-soon">
-                    <h2>Coming Soon</h2>
-                    <p>This article is currently being written. Check back soon for the full technical deep dive!</p>
-                </div>
+                <h2>The Context</h2>
+
+                <p>
+                    <a href="https://github.com/mattnic2" target="_blank" rel="noopener noreferrer">Matthew</a> and I built Popper's infrastructure in an era that already feels distant. The AI coding assistant landscape was essentially empty — ChatGPT had just launched and was impressive for explanations, but you weren't shipping production code from it. There was no autocomplete that understood your codebase, no tool that could read an error and reason about its cause in context. You debugged by reading, by thinking, by posting to Stack Overflow and hoping someone who'd hit the same wall would respond.
+                </p>
+
+                <p>
+                    Our research loop was straightforward and slow: find a Reddit thread where someone described a problem close enough to ours, trace the accepted answers, cross-reference with documentation that often lagged reality by months, and test it ourselves. Early ChatGPT helped with conceptual questions — what is X, explain Y — but the specifics of our implementation were ours to figure out alone. That constraint, in retrospect, meant we understood every decision deeply because we had to.
+                </p>
+
+                <h2>Why Firebase</h2>
+
+                <p>
+                    We chose Firebase because the learning curve for a two-person technical team trying to move fast was the lowest available. NoSQL didn't require us to design a rigid schema upfront, which mattered enormously when we weren't certain what shape our data would take. Firestore's real-time listeners were a genuine technical asset — concurrent listeners let us sync state across users without building a WebSocket layer ourselves, and for an app where live updates were core to the experience, that was significant.
+                </p>
+
+                <p>
+                    The indexing system, once we understood it, was genuinely powerful. Composite indexes meant complex queries didn't require us to pull everything and filter client-side. We got there through trial and error — the infamous Firestore "missing index" error with the helpful link to auto-create became a familiar sight — but once we understood what we were doing, the query performance was real.
+                </p>
+
+                <p>
+                    What Firebase gave us in speed and simplicity, it took back in other ways. The lessons that followed cost us time we didn't have.
+                </p>
+
+                <h2>Database Design: Flatter Is the Move</h2>
+
+                <p>
+                    The single most expensive mistake we made with Firestore was nesting. It seems intuitive at first — a user has transactions, so nest transactions under the user. A business has rewards, so nest rewards under the business. The data model reads cleanly in your head. Then you try to query across it.
+                </p>
+
+                <p>
+                    Firestore does not let you query across subcollections by default. If you nest transactions under users, you cannot ask "give me all transactions from the last 24 hours across all users" without reading every user document and pulling their subcollections individually. At small scale, you don't feel this. At real scale, it becomes a wall.
+                </p>
+
+                <p>
+                    The lesson is absolute: flatten your data. Duplicate it if necessary. Denormalization is not a dirty word in NoSQL — it's the architecture. Design your collections around the queries you'll actually run, not around the object hierarchy that feels natural. Every time we refactored a nested structure into a flat collection with the right fields, performance improved and the query logic simplified. We learned this late. Now we design flat from day one.
+                </p>
+
+                <h2>Caching Is the Secret</h2>
+
+                <p>
+                    Firebase charges per read. That is not a billing inconvenience — it is an architectural constraint that shapes every decision you make if you're thinking clearly. The apps that get expensive fast are the ones that treat Firestore like a database you query whenever you need data, the way you might with a free self-hosted Postgres instance. It isn't that. Every read costs.
+                </p>
+
+                <p>
+                    Caching is the answer, and it has to be deliberate. We kept frequently accessed data in local state and only went back to the database on explicit refresh or when we knew the underlying data had changed via a listener. We cached user profiles aggressively — data that changes rarely should not be fetched on every screen load. Business information, reward configurations, anything stable got cached.
+                </p>
+
+                <p>
+                    The shift in thinking is from "fetch what I need when I need it" to "what do I already have, and when is the right moment to refresh it?" It requires discipline in the implementation and pays off immediately in both cost and speed. A cached read is zero latency. No cache strategy is a compounding bill.
+                </p>
+
+                <h2>CAP Theorem in Practice</h2>
+
+                <p>
+                    You learn CAP theorem in school as a theoretical constraint: a distributed system can guarantee at most two of Consistency, Availability, and Partition tolerance. In practice, with Firebase, the real choice is between consistency and availability when network conditions are imperfect — and for a consumer app, the answer is availability, always.
+                </p>
+
+                <p>
+                    A user who sees slightly stale data is annoyed. A user who sees a spinner for three seconds because we're waiting for a consistent read is gone. We chose to display optimistic local state immediately and reconcile with the server in the background. Transactions are the exception — anything involving money or reward balances required strong consistency and we enforced it — but the vast majority of read operations prioritized showing something real and fast over showing something guaranteed-fresh.
+                </p>
+
+                <p>
+                    This is a product decision as much as a technical one. Your CAP tradeoffs are downstream of what your users will actually tolerate, and most consumer users will not tolerate latency for the sake of consistency they'd never notice.
+                </p>
+
+                <h2>Package Management Is Hell</h2>
+
+                <p>
+                    I have nothing new to add to the cultural consensus on this. Package management is a form of suffering that every developer eventually accepts as ambient. But in React Native, it reaches a particular intensity.
+                </p>
+
+                <p>
+                    The dependency graph for a React Native project is genuinely hostile. Native modules must be compatible with the React Native version, which must be compatible with the Expo SDK version if you're using Expo, which must be compatible with the target iOS and Android versions, all of which change on schedules that don't coordinate with each other. A package that works perfectly on one setup will silently break on an upgrade to any one of these layers. We spent weeks over the course of the project on dependency issues that had nothing to do with our product.
+                </p>
+
+                <p>
+                    The lesson we took: minimize dependencies ruthlessly. Every package you add is a hostage to the ecosystem. If you can write the functionality yourself in a reasonable time, write it. If you need the package, pin the version and do not upgrade it without a deliberate review of what changed.
+                </p>
+
+                <h2>React Native Is More Limited Than It Looks</h2>
+
+                <p>
+                    React Native sells itself on the promise of one codebase for both platforms. That promise is real, up to a point. For standard UI, navigation, and data flows, it delivers. Then you hit a native capability — camera, Bluetooth, location with background permissions, anything that requires low-level access to hardware — and you realize the abstraction has a ceiling.
+                </p>
+
+                <p>
+                    Native modules are the escape hatch, and they come with a cost: you need a Mac to build for iPhone. No exceptions. The iOS build toolchain requires Xcode, Xcode requires macOS, and there is no path around that for production iPhone apps. We learned this at a moment that was not convenient. If you're planning to ship on iOS, plan your development environment around this constraint from day one.
+                </p>
+
+                <p>
+                    For anything performance-sensitive on device — camera processing, Bluetooth communication, precise location tracking — Swift native modules are the right answer. React Native JavaScript executing through a bridge is not the right tool for low-level hardware interaction. The bridge adds latency and the JS runtime adds overhead that you feel immediately in anything time-sensitive. Write those modules in Swift, expose them cleanly to your React Native layer, and don't try to do hardware work in JavaScript.
+                </p>
+
+                <h2>What We'd Tell Ourselves</h2>
+
+                <p>
+                    Honestly? Not bad for a first try. The concurrent listener architecture worked. The real-time sync held up. Users moved through the app and things updated when they were supposed to. We grew to over a thousand users and sixty-plus business partners on an infrastructure we built without the tools that make this easier today.
+                </p>
+
+                <p>
+                    The one thing we'd repeat loudest: prioritize user experience over new features, always. There were moments when we were tempted to build new capabilities on infrastructure that wasn't solid yet, to ship things because they were interesting rather than because they made the existing experience better. Every time we resisted that temptation, we were right to resist it. Every time we didn't, we paid for it.
+                </p>
+
+                <p>
+                    Infrastructure is expensive in two directions — the direct cost of compute and reads and writes, and the indirect cost of building more than you need. We overbuilt some things early. We built features that used infrastructure no one ended up using. The discipline we needed was simpler: build for the users you have, not the users you're imagining. Keep the system as lean as the product requires. Add complexity when you've earned it by outgrowing the simple version.
+                </p>
+
+                <p>
+                    That's the unglamorous version of scaling. The glamorous version is big numbers and clever architecture. The real version is a lot of Reddit threads, a patient CTO, and a growing conviction that you understand the system because you built it by hand.
+                </p>
 
                 <nav class="chapter-navigation">
                     <a href="/blog/launching-curlyhair-ai.html" class="chapter-nav-link">

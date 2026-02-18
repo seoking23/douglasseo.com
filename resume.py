@@ -163,9 +163,9 @@ def create_resume():
     story.append(Paragraph("PROFESSIONAL EXPERIENCE", section_header))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#333333'), spaceAfter=8))
     
-    # Azetta AI - Cosma
+    # Azetta AI 
     story.append(Paragraph(
-        "<b>Co-Founder & CTO</b> | Azetta AI - Cosma | San Francisco, CA | 10/2025 – Present",
+        "<b>Co-Founder & CTO</b> | Azetta AI  | San Francisco, CA | 10/2025 – Present",
         subsection_header
     ))
     story.append(Paragraph(
