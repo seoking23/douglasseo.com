@@ -1,0 +1,27 @@
+/* dotted-surface.css - shared radial gradient and dotted surface container for all screens */
+
+:root {
+    --scroll-gradient: radial-gradient(circle at top center, transparent, #93c5fd);
+}
+
+main::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+    background-image: var(--scroll-gradient);
+}
+
+.dotted-surface {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    pointer-events: none;
+}

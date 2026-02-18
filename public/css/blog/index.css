@@ -1,0 +1,103 @@
+/* blog/index.css - blog index / table of contents (requires base.css) */
+
+.page-header {
+    margin-bottom: var(--space-xl);
+    border-bottom: 1px solid var(--color-border-divider);
+    padding-bottom: var(--space-lg);
+}
+
+.page-header h1 {
+    font-size: 1.25rem;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-widest);
+    margin-bottom: var(--space-xs);
+    color: var(--color-text);
+}
+
+.page-header .page-subtitle {
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    font-style: italic;
+}
+
+.blog-main .container,
+.blog-main .article-container {
+    max-width: none;
+    padding: 0;
+}
+
+.posts-grid {
+    display: block;
+    margin-bottom: 0;
+}
+
+.post-card {
+    background: transparent;
+    padding: var(--space-md) 0;
+    border: none;
+    border-bottom: 1px solid var(--color-border-light);
+    text-decoration: none;
+    color: var(--color-text-strong);
+    display: block;
+}
+
+.posts-grid .post-card:first-of-type {
+    border-top: none;
+}
+
+.post-card + .post-card {
+    margin-top: 0;
+}
+
+.post-card:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.post-chapter-number {
+    font-size: var(--font-size-3xs);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: var(--space-xs);
+}
+
+.post-meta {
+    color: var(--color-muted);
+    font-size: var(--font-size-3xs);
+    margin-bottom: var(--space-sm);
+}
+
+.post-title {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+    color: var(--color-text-strong);
+    line-height: var(--line-height-tight);
+}
+
+.post-excerpt {
+    color: var(--color-muted-light);
+    font-size: var(--font-size-sm);
+    line-height: 1.55;
+}
+
+.post-card-clickable {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.posts-grid .card-footer {
+    margin-top: var(--space-sm);
+    padding-top: 0;
+    border-top: none;
+}
+
+.posts-grid .read-more-link {
+    color: var(--color-muted);
+    font-size: var(--font-size-2xs);
+}
+
+.posts-grid .read-more-link:hover {
+    text-decoration: underline;
+}

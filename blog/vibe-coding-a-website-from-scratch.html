@@ -8,17 +8,36 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link rel="stylesheet" href="/public/css/base.css">
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
     <link rel="stylesheet" href="/public/css/blog.css">
 </head>
 <body>
     <main>
-        <div class="article-container">
-            <a href="/blog/" class="back-link">
-                ← Back to all posts
-            </a>
+        <div class="dotted-surface" id="dottedSurface"></div>
+        <div class="blog-layout">
+            <aside class="blog-side-nav">
+                <a href="/#writing" class="back-link">← Back to home</a>
+                <h2 class="side-nav-title">Contents</h2>
+                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
+                <nav class="side-nav-list">
+                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
+                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
+                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
+                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
+                    <a href="/blog/building-in-public.html">5. Building in Public</a>
+                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
+                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
+                    <a href="/blog/vibe-coding-a-website-from-scratch.html" class="side-nav-active">8. Vibe-Coding a Website</a>
+                </nav>
+            </aside>
+            <div class="blog-main">
+                <div class="article-container">
+            <a href="/blog/" class="back-link">← Table of Contents</a>
 
             <div class="article-header">
+                <div class="chapter-label">Chapter 8</div>
                 <h1 class="article-title">Vibe-Coding a Website from Scratch, Less is More</h1>
                 <div class="article-meta">
                     <time datetime="2026-02-18">February 18, 2026</time>
@@ -139,6 +158,16 @@
                 <p>
                     Starting over with basics didn't feel like going backward. It felt like returning to something I should have kept hold of the whole time. And the more we build this way at Azetta, the more convinced I am that in the AI era, this is the right way to be technical — not reaching for what's available, but building exactly what you need.
                 </p>
+
+                <nav class="chapter-navigation">
+                    <a href="/blog/collaborating-with-bashnota.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Previous chapter</span>
+                        <span>← Chapter 7: Collaborating with BashNota</span>
+                    </a>
+                    <span></span>
+                </nav>
+            </div>
+                </div>
             </div>
         </div>
     </main>
@@ -155,6 +184,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/dotted-surface.js"></script>
     <script>
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {

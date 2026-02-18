@@ -1,25 +1,15 @@
 /* home.css - home page only (index.html) */
 
+/* Do not use blog.css narrow container on home */
+main .container {
+    max-width: 1200px;
+    min-height: auto;
+}
+
 section {
     padding: 1rem 0;
     position: relative;
     z-index: 2;
-}
-
-:root {
-    --scroll-gradient: radial-gradient(circle at top center, transparent, #93c5fd);
-}
-
-main::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 0;
-    pointer-events: none;
-    background-image: var(--scroll-gradient);
 }
 
 .hero {
@@ -29,16 +19,6 @@ main::before {
     background: transparent;
     color: inherit;
     position: relative;
-}
-
-.dotted-surface {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1;
-    pointer-events: none;
 }
 
 .hero .container {
@@ -372,7 +352,34 @@ main::before {
     border-radius: 0 0 8px 8px;
 }
 
+/* Blog preview: override posts-grid to show 3 columns on home */
+.blog-preview-grid {
+    margin-top: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+}
+
+.blog-preview-grid .post-card {
+    border: none;
+    border-bottom: 1px solid #e8e8e8;
+    border-right: 1px solid #e8e8e8;
+    padding: 1rem;
+}
+
+.blog-preview-grid .post-card:nth-child(3n) {
+    border-right: none;
+}
+
 @media (max-width: 768px) {
+    .blog-preview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .blog-preview-grid .post-card {
+        border-right: none;
+    }
+
     .about-content {
         flex-direction: column;
         align-items: center;

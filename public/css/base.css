@@ -1,4 +1,44 @@
-/* base.css - shared styles for douglasseo.com */
+/* base.css - master styles for douglasseo.com (design tokens + shared primitives) */
+
+:root {
+    /* Colors */
+    --color-text: #333;
+    --color-text-strong: #000;
+    --color-muted: #666;
+    --color-muted-light: #555;
+    --color-border: #e5e5e5;
+    --color-border-light: #e8e8e8;
+    --color-border-divider: #c9c9c9;
+    --color-link: #0066cc;
+    --color-link-hover: #0052a3;
+    --color-bg: #fff;
+
+    /* Typography */
+    --font-family-base: Georgia, serif;
+    --font-size-base: 1rem;
+    --font-size-sm: 0.9rem;
+    --font-size-xs: 0.85rem;
+    --font-size-2xs: 0.8rem;
+    --font-size-3xs: 0.75rem;
+    --line-height-base: 1.6;
+    --line-height-tight: 1.4;
+    --line-height-loose: 1.7;
+    --letter-spacing-wide: 0.1em;
+    --letter-spacing-wider: 0.12em;
+    --letter-spacing-widest: 0.15em;
+
+    /* Spacing */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 2.5rem;
+
+    /* Transitions */
+    --transition-fast: 0.1s;
+    --transition-base: 0.3s;
+}
 
 * {
     margin: 0;
@@ -7,10 +47,11 @@
 }
 
 body {
-    font-family: Georgia, serif;
-    line-height: 1.6;
-    color: #333;
-    background: #fff;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--color-text);
+    background: var(--color-bg);
 }
 
 .container {
@@ -20,8 +61,8 @@ body {
 }
 
 header {
-    padding: 1rem 0;
-    border-bottom: 1px solid #e5e5e5;
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid var(--color-border);
     position: sticky;
     top: 0;
     background: rgba(255, 255, 255, 0.9);
@@ -39,7 +80,7 @@ nav {
     font-weight: bold;
     font-size: 1.2rem;
     text-decoration: none;
-    color: #333;
+    color: var(--color-text);
 }
 
 nav ul {
@@ -50,17 +91,17 @@ nav ul {
 
 nav a {
     text-decoration: none;
-    color: #333;
-    transition: color 0.3s;
+    color: var(--color-text);
+    transition: color var(--transition-base);
 }
 
 nav a:hover {
-    color: #0066cc;
+    color: var(--color-link);
 }
 
 main {
-    background: white;
-    color: #333;
+    background: var(--color-bg);
+    color: var(--color-text);
     position: relative;
 }
 
@@ -77,9 +118,9 @@ footer {
 }
 
 .footer-link {
-    color: black;
+    color: var(--color-text-strong);
     text-decoration: none;
-    transition: opacity 0.1s;
+    transition: opacity var(--transition-fast);
 }
 
 .footer-link:hover {
@@ -88,20 +129,20 @@ footer {
 
 .card-footer {
     margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid #f0f0f0;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--color-border-light);
 }
 
 .read-more-link {
-    color: #0066cc;
+    color: var(--color-link);
     text-decoration: none;
     font-weight: 500;
-    font-size: 0.9rem;
-    transition: color 0.3s;
+    font-size: var(--font-size-sm);
+    transition: color var(--transition-base);
 }
 
 .read-more-link:hover {
-    color: #0052a3;
+    color: var(--color-link-hover);
     text-decoration: underline;
 }
 

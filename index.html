@@ -25,6 +25,8 @@
     <meta property="twitter:description" content="UC Berkeley EECS grad with a passion for building impactful products. Founder of Popper LLC, Co-founder of Azetta AI - Cosma.">
     <meta property="twitter:image" content="https://douglasseo.com/public/optimized/profile_image.webp">
     <link rel="stylesheet" href="/public/css/base.css">
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
+    <link rel="stylesheet" href="/public/css/blog.css">
     <link rel="stylesheet" href="/public/css/home.css">
 </head>
 <body>
@@ -141,6 +143,38 @@
                 </div>
                 <div style = "text-align: center;">
                     <p onclick="openPdfModal('/public/Douglas_Seo_Resume_AI_Research.pdf', 'Resume Preview')" style="cursor: pointer; text-decoration: none;">Résumé/CV</p>
+                </div>
+                <div class="posts-grid blog-preview-grid">
+                    <a href="/blog/vibe-coding-a-website-from-scratch.html" class="post-card post-card-clickable">
+                        <div class="post-chapter-number">Chapter 8</div>
+                        <div class="post-meta">February 18, 2026 • 7 min read</div>
+                        <h2 class="post-title">Vibe-Coding a Website from Scratch, Less is More</h2>
+                        <p class="post-excerpt">What I learned building my personal website without a framework, a design system, or a plan — just a blank file, a feeling, and the discipline to stop before I went too far.</p>
+                        <div class="card-footer">
+                            <span class="read-more-link">Read chapter →</span>
+                        </div>
+                    </a>
+                    <a href="/blog/collaborating-with-bashnota.html" class="post-card post-card-clickable">
+                        <div class="post-chapter-number">Chapter 7</div>
+                        <div class="post-meta">May 12, 2025 • 5 min read</div>
+                        <h2 class="post-title">Collaborating with BashNota: Bringing Revolutionary Computational Research Tools to the Masses</h2>
+                        <p class="post-excerpt">How I'm working with Taha Bouhsine, CEO of MLNomads and inventor of YAT, to bring BashNota - the world's greatest computational research tool - to researchers and developers worldwide.</p>
+                        <div class="card-footer">
+                            <span class="read-more-link">Read chapter →</span>
+                        </div>
+                    </a>
+                    <a href="/blog/building-love-into-code.html" class="post-card post-card-clickable">
+                        <div class="post-chapter-number">Chapter 6</div>
+                        <div class="post-meta">February 14, 2025 • 10 min read</div>
+                        <h2 class="post-title">Building Love into Code: How I Made tomylovemiwa.com</h2>
+                        <p class="post-excerpt">The story of creating a Valentine's Day love game website with 6 interactive games and a surprise Japan trip planner.</p>
+                        <div class="card-footer">
+                            <span class="read-more-link">Read chapter →</span>
+                        </div>
+                    </a>
+                </div>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="/blog/">read more from Douglas's learnings</a>
                 </div>
             </div>
         </section>
@@ -279,382 +313,7 @@
                 closePdfModal();
             }
         });
-
-        // Three.js Dotted Surface Animation with physics-based ripple effect
-        function initDottedSurface() {
-            try {
-                // Verify Three.js is available
-                if (typeof THREE === 'undefined') {
-                    console.warn('index.html: Three.js not loaded, skipping dotted surface animation');
-                    return;
-                }
-
-                const container = document.getElementById('dottedSurface');
-                if (!container || !container.offsetWidth || !container.offsetHeight) {
-                    console.warn('index.html: Dotted surface container not ready or invalid dimensions');
-                    return;
-                }
-
-                // Check WebGL support
-                const canvas = document.createElement('canvas');
-                const glContext = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                if (!glContext) {
-                    console.warn('index.html: WebGL not supported, skipping dotted surface animation');
-                    return;
-                }
-
-                const SEPARATION = 150;
-                const AMOUNTX = Math.max(10, Math.min(40, Math.floor(container.offsetWidth / 30)));
-                const AMOUNTY = Math.max(15, Math.min(60, Math.floor(container.offsetHeight / 20)));
-
-                // Physics constants for ripple effect and scroll tremor
-                const PHYSICS_CONFIG = {
-                    mouseForceRadius: 200,
-                    mouseForceStrength: 4000,
-                    springStrength: 0.08,
-                    damping: 0.92,
-                    maxDisplacement: 100,
-                    scrollTremorStrength: 0.1,
-                    scrollTremorDecay: 0.2,
-                    scrollTremorFrequency: 0.05
-                };
-
-                // Scene setup with error handling
-                let scene, camera, renderer, geometry, material, points, raycaster, intersectionPlane;
-                let count = 0;
-                let animationId;
-                let isVisible = true;
-                let isInitialized = false;
-
-                // Mouse tracking
-                const mousePosition = new THREE.Vector2();
-                const mouseWorld = new THREE.Vector3();
-                let isMouseOverCanvas = false;
-
-                // Scroll tremor tracking
-                let scrollVelocity = 0;
-                let scrollTremorPhase = 0;
-                let lastScrollY = window.scrollY;
-
-                // Physics arrays for each particle
-                let originalPositions = [];
-                let velocitiesX = [];
-                let velocitiesY = [];
-                let velocitiesZ = [];
-                let displacementsX = [];
-                let displacementsY = [];
-                let displacementsZ = [];
-
-                try {
-                    scene = new THREE.Scene();
-                    scene.fog = new THREE.Fog(0xffffff, 2000, 10000);
-
-                    camera = new THREE.PerspectiveCamera(
-                        60,
-                        container.offsetWidth / container.offsetHeight,
-                        1,
-                        10000
-                    );
-                    camera.position.set(0, 355, 1220);
-
-                    renderer = new THREE.WebGLRenderer({
-                        alpha: true,
-                        antialias: window.devicePixelRatio < 2,
-                        powerPreference: 'low-power'
-                    });
-                    
-                    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                    renderer.setSize(container.offsetWidth, container.offsetHeight);
-                    renderer.setClearColor(scene.fog.color, 0);
-
-                    container.appendChild(renderer.domElement);
-
-                    // Setup raycaster for mouse-to-world coordinate conversion
-                    raycaster = new THREE.Raycaster();
-                    intersectionPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-                } catch (renderError) {
-                    console.warn('index.html: Failed to initialize Three.js renderer:', renderError);
-                    return;
-                }
-
-                // Create particles with error handling
-                try {
-                    const positions = [];
-                    const colors = [];
-
-                    geometry = new THREE.BufferGeometry();
-
-                    const totalParticles = AMOUNTX * AMOUNTY;
-                    
-                    // Initialize physics arrays
-                    velocitiesX = new Float32Array(totalParticles);
-                    velocitiesY = new Float32Array(totalParticles);
-                    velocitiesZ = new Float32Array(totalParticles);
-                    displacementsX = new Float32Array(totalParticles);
-                    displacementsY = new Float32Array(totalParticles);
-                    displacementsZ = new Float32Array(totalParticles);
-
-                    for (let ix = 0; ix < AMOUNTX; ix++) {
-                        for (let iy = 0; iy < AMOUNTY; iy++) {
-                            const particleX = ix * SEPARATION - (AMOUNTX * SEPARATION) / 2;
-                            const particleY = 0;
-                            const particleZ = iy * SEPARATION - (AMOUNTY * SEPARATION) / 2;
-
-                            positions.push(particleX, particleY, particleZ);
-                            originalPositions.push(particleX, particleY, particleZ);
-                            colors.push(255, 255, 255);
-                        }
-                    }
-
-                    geometry.setAttribute(
-                        'position',
-                        new THREE.Float32BufferAttribute(positions, 3)
-                    );
-                    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-                    material = new THREE.PointsMaterial({
-                        size: 10,
-                        vertexColors: true,
-                        transparent: true,
-                        opacity: 0.7,
-                        sizeAttenuation: true
-                    });
-
-                    points = new THREE.Points(geometry, material);
-                    scene.add(points);
-                    isInitialized = true;
-                } catch (geometryError) {
-                    console.warn('index.html: Failed to create dotted surface geometry:', geometryError);
-                    cleanup();
-                    return;
-                }
-
-                // Mouse event handlers using document-level tracking
-                function handleMouseMove(event) {
-                    const rect = renderer.domElement.getBoundingClientRect();
-                    mousePosition.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-                    mousePosition.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-                    
-                    // Convert mouse position to world coordinates
-                    raycaster.setFromCamera(mousePosition, camera);
-                    raycaster.ray.intersectPlane(intersectionPlane, mouseWorld);
-                    isMouseOverCanvas = true;
-                }
-
-                function handleMouseLeave() {
-                    isMouseOverCanvas = false;
-                }
-
-                // Add mouse event listeners at document level for seamless tracking
-                document.addEventListener('mousemove', handleMouseMove);
-                document.addEventListener('mouseleave', handleMouseLeave);
-
-                // Scroll event handler for tremor effect
-                function handleScroll() {
-                    const currentScrollY = window.scrollY;
-                    const scrollDelta = currentScrollY - lastScrollY;
-                    
-                    // Add scroll delta to velocity (clamped for sanity)
-                    scrollVelocity += Math.min(Math.max(scrollDelta, -50), 50) * 0.1;
-                    lastScrollY = currentScrollY;
-                }
-
-                window.addEventListener('scroll', handleScroll, { passive: true });
-
-                // Intersection Observer for performance optimization
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        isVisible = entry.isIntersecting;
-                    });
-                }, { threshold: 0.1 });
-
-                observer.observe(container);
-
-                // Physics-based animation function with ripple effect
-                function animate() {
-                    if (!isInitialized || !isVisible) {
-                        animationId = requestAnimationFrame(animate);
-                        return;
-                    }
-
-                    try {
-                        const positionAttribute = geometry.attributes.position;
-                        const currentPositions = positionAttribute.array;
-
-                        let particleIndex = 0;
-                        for (let ix = 0; ix < AMOUNTX; ix++) {
-                            for (let iy = 0; iy < AMOUNTY; iy++) {
-                                const arrayIndex = particleIndex * 3;
-                                
-                                // Get original position (base position before wave)
-                                const originalX = originalPositions[arrayIndex];
-                                const originalZ = originalPositions[arrayIndex + 2];
-                                
-                                // Calculate wave-based Y position
-                                const waveY = Math.sin((ix + count) * 0.3) * 50 +
-                                             Math.sin((iy + count) * 0.5) * 50;
-
-                                // Apply mouse force if mouse is over canvas
-                                if (isMouseOverCanvas) {
-                                    const deltaX = originalX + displacementsX[particleIndex] - mouseWorld.x;
-                                    const deltaZ = originalZ + displacementsZ[particleIndex] - mouseWorld.z;
-                                    const distanceToMouse = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
-
-                                    if (distanceToMouse < PHYSICS_CONFIG.mouseForceRadius && distanceToMouse > 0) {
-                                        // Calculate repulsion force (inverse square with falloff)
-                                        const forceFactor = 1 - (distanceToMouse / PHYSICS_CONFIG.mouseForceRadius);
-                                        const forceStrength = PHYSICS_CONFIG.mouseForceStrength * forceFactor * forceFactor;
-                                        
-                                        // Normalize direction and apply force
-                                        const normalizedX = deltaX / distanceToMouse;
-                                        const normalizedZ = deltaZ / distanceToMouse;
-                                        
-                                        velocitiesX[particleIndex] += normalizedX * forceStrength * 0.001;
-                                        velocitiesZ[particleIndex] += normalizedZ * forceStrength * 0.001;
-                                        
-                                        // Add slight upward force for visual interest
-                                        velocitiesY[particleIndex] += forceStrength * 0.0003 * forceFactor;
-                                    }
-                                }
-
-                                // Apply scroll tremor - alternating left/right force based on scroll velocity
-                                if (Math.abs(scrollVelocity) > 0.01) {
-                                    // Create phase offset based on particle position for wave-like tremor
-                                    const particlePhaseOffset = (ix * 0.3 + iy * 0.2);
-                                    const tremorDirection = Math.sin(scrollTremorPhase + particlePhaseOffset);
-                                    const tremorForce = tremorDirection * Math.abs(scrollVelocity) * PHYSICS_CONFIG.scrollTremorStrength;
-                                    
-                                    velocitiesX[particleIndex] += tremorForce;
-                                }
-
-                                // Apply spring force to return to original position
-                                velocitiesX[particleIndex] -= displacementsX[particleIndex] * PHYSICS_CONFIG.springStrength;
-                                velocitiesY[particleIndex] -= displacementsY[particleIndex] * PHYSICS_CONFIG.springStrength;
-                                velocitiesZ[particleIndex] -= displacementsZ[particleIndex] * PHYSICS_CONFIG.springStrength;
-
-                                // Apply damping
-                                velocitiesX[particleIndex] *= PHYSICS_CONFIG.damping;
-                                velocitiesY[particleIndex] *= PHYSICS_CONFIG.damping;
-                                velocitiesZ[particleIndex] *= PHYSICS_CONFIG.damping;
-
-                                // Update displacements
-                                displacementsX[particleIndex] += velocitiesX[particleIndex];
-                                displacementsY[particleIndex] += velocitiesY[particleIndex];
-                                displacementsZ[particleIndex] += velocitiesZ[particleIndex];
-
-                                // Clamp displacements to prevent extreme values
-                                const maxDisplacement = PHYSICS_CONFIG.maxDisplacement;
-                                displacementsX[particleIndex] = Math.max(-maxDisplacement, Math.min(maxDisplacement, displacementsX[particleIndex]));
-                                displacementsY[particleIndex] = Math.max(-maxDisplacement, Math.min(maxDisplacement, displacementsY[particleIndex]));
-                                displacementsZ[particleIndex] = Math.max(-maxDisplacement, Math.min(maxDisplacement, displacementsZ[particleIndex]));
-
-                                // Set final position: original + wave + physics displacement
-                                currentPositions[arrayIndex] = originalX + displacementsX[particleIndex];
-                                currentPositions[arrayIndex + 1] = waveY + displacementsY[particleIndex];
-                                currentPositions[arrayIndex + 2] = originalZ + displacementsZ[particleIndex];
-
-                                particleIndex++;
-                            }
-                        }
-
-                        // Update scroll tremor state
-                        scrollTremorPhase += PHYSICS_CONFIG.scrollTremorFrequency;
-                        scrollVelocity *= PHYSICS_CONFIG.scrollTremorDecay;
-
-                        positionAttribute.needsUpdate = true;
-                        renderer.render(scene, camera);
-                        count += 0.1;
-                    } catch (animationError) {
-                        console.warn('index.html: Animation error:', animationError);
-                    }
-
-                    animationId = requestAnimationFrame(animate);
-                }
-
-                // Enhanced resize handler
-                function handleResize() {
-                    if (!isInitialized || !container || !camera || !renderer) return;
-                    
-                    try {
-                        const width = container.offsetWidth;
-                        const height = container.offsetHeight;
-                        
-                        if (width > 0 && height > 0) {
-                            camera.aspect = width / height;
-                            camera.updateProjectionMatrix();
-                            renderer.setSize(width, height);
-                        }
-                    } catch (resizeError) {
-                        console.warn('index.html: Resize error:', resizeError);
-                    }
-                }
-
-                // Comprehensive cleanup function
-                function cleanup() {
-                    try {
-                        if (observer) observer.disconnect();
-                        window.removeEventListener('resize', handleResize);
-                        
-                        // Remove document-level mouse and scroll listeners
-                        document.removeEventListener('mousemove', handleMouseMove);
-                        document.removeEventListener('mouseleave', handleMouseLeave);
-                        window.removeEventListener('scroll', handleScroll);
-                        
-                        if (animationId) cancelAnimationFrame(animationId);
-                        
-                        if (scene) {
-                            scene.traverse((object) => {
-                                if (object.geometry) object.geometry.dispose();
-                                if (object.material) {
-                                    if (Array.isArray(object.material)) {
-                                        object.material.forEach((materialItem) => materialItem.dispose());
-                                    } else {
-                                        object.material.dispose();
-                                    }
-                                }
-                            });
-                            scene.clear();
-                        }
-                        
-                        if (renderer) {
-                            renderer.dispose();
-                            renderer.forceContextLoss();
-                            if (container && renderer.domElement && container.contains(renderer.domElement)) {
-                                container.removeChild(renderer.domElement);
-                            }
-                        }
-
-                        isInitialized = false;
-                    } catch (cleanupError) {
-                        console.warn('index.html: Cleanup error:', cleanupError);
-                    }
-                }
-
-                window.addEventListener('resize', handleResize);
-                window.addEventListener('beforeunload', cleanup);
-
-                // Start animation
-                animate();
-
-                // Store cleanup function globally
-                window.dottedSurfaceCleanup = cleanup;
-
-            } catch (initError) {
-                console.warn('index.html: Failed to initialize dotted surface:', initError);
-            }
-        }
-
-        // Safe initialization with multiple fallbacks
-        function safeDottedSurfaceInit() {
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initDottedSurface);
-            } else {
-                // DOM already loaded, but wait a bit for Three.js to be available
-                setTimeout(initDottedSurface, 100);
-            }
-        }
-
-        safeDottedSurfaceInit();
     </script>
+    <script src="/public/js/dotted-surface.js"></script>
 </body>
 </html>

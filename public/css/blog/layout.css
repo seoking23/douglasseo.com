@@ -1,0 +1,74 @@
+/* blog/layout.css - blog layout and side nav (requires base.css) */
+
+.blog-layout {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    gap: var(--space-xl);
+    min-height: 100dvh;
+}
+
+.blog-side-nav {
+    flex-shrink: 0;
+    width: 12rem;
+    padding: var(--space-lg) 0 var(--space-xl) max(var(--space-md), 4dvw);
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    max-height: 100dvh;
+    overflow-y: auto;
+}
+
+.blog-side-nav .back-link {
+    margin-bottom: var(--space-lg);
+}
+
+.side-nav-title {
+    font-size: var(--font-size-3xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--color-muted);
+    margin-bottom: var(--space-md);
+}
+
+.side-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.side-nav-list a {
+    font-size: var(--font-size-xs);
+    color: var(--color-text);
+    text-decoration: none;
+    line-height: var(--line-height-tight);
+}
+
+.side-nav-list a:hover {
+    text-decoration: underline;
+}
+
+.side-nav-list a.side-nav-active {
+    font-weight: 600;
+    color: var(--color-text-strong);
+}
+
+.side-nav-toc-link {
+    display: block;
+    font-size: var(--font-size-2xs);
+    color: var(--color-muted);
+    text-decoration: none;
+    margin-bottom: var(--space-md);
+}
+
+.side-nav-toc-link:hover {
+    color: var(--color-text-strong);
+    text-decoration: underline;
+}
+
+.blog-main {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-lg) max(var(--space-md), 4dvw) var(--space-xl) 0;
+}

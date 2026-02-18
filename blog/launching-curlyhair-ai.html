@@ -8,18 +8,37 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link rel="stylesheet" href="/public/css/base.css">
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
     <link rel="stylesheet" href="/public/css/blog.css">
 </head>
 <body>
 
     <main>
-        <div class="article-container">
-            <a href="/blog/" class="back-link">
-                ← Back to all posts
-            </a>
+        <div class="dotted-surface" id="dottedSurface"></div>
+        <div class="blog-layout">
+            <aside class="blog-side-nav">
+                <a href="/#writing" class="back-link">← Back to home</a>
+                <h2 class="side-nav-title">Contents</h2>
+                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
+                <nav class="side-nav-list">
+                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
+                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
+                    <a href="/blog/launching-curlyhair-ai.html" class="side-nav-active">3. Curly-Hair-ai.com</a>
+                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
+                    <a href="/blog/building-in-public.html">5. Building in Public</a>
+                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
+                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
+                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
+                </nav>
+            </aside>
+            <div class="blog-main">
+                <div class="article-container">
+            <a href="/blog/" class="back-link">← Table of Contents</a>
 
             <div class="article-header">
+                <div class="chapter-label">Chapter 3</div>
                 <h1 class="article-title">Curly-Hair-ai.com: Building a Domain-Specific AI for Haircare</h1>
                 <div class="article-meta">
                     <time datetime="2023-01-10">January 10, 2023</time>
@@ -32,6 +51,19 @@
                 <div class="coming-soon">
                     <h2>Coming Soon</h2>
                     <p>This article is currently being written. Check back soon for the technical journey of creating an AI-powered haircare recommendation system specifically designed for curly hair patterns and challenges.</p>
+                </div>
+
+                <nav class="chapter-navigation">
+                    <a href="/blog/from-uc-berkeley-to-founder.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Previous chapter</span>
+                        <span>← Chapter 2: From UC Berkeley to Founder</span>
+                    </a>
+                    <a href="/blog/engineering-poppers-infrastructure.html" class="chapter-nav-link chapter-nav-next">
+                        <span class="chapter-nav-label">Next chapter</span>
+                        <span>Chapter 4: Engineering Popper's Infra →</span>
+                    </a>
+                </nav>
+            </div>
                 </div>
             </div>
         </div>
@@ -49,6 +81,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/dotted-surface.js"></script>
     <script>
         // Smooth scrolling for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
