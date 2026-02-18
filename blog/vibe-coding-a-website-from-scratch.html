@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe-Coding a Website from Scratch, Less is More - Douglas Seo</title>
+    <meta name="description" content="What I learned building my personal website without a framework, a design system, or a plan — just a blank file and a feeling.">
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+    <link rel="stylesheet" href="/public/css/base.css">
+    <link rel="stylesheet" href="/public/css/blog.css">
+</head>
+<body>
+    <main>
+        <div class="article-container">
+            <a href="/blog/" class="back-link">
+                ← Back to all posts
+            </a>
+
+            <div class="article-header">
+                <h1 class="article-title">Vibe-Coding a Website from Scratch, Less is More</h1>
+                <div class="article-meta">
+                    <time datetime="2026-02-18">February 18, 2026</time>
+                    <span>•</span>
+                    <span>7 min read</span>
+                </div>
+            </div>
+
+            <div class="article-content">
+                <p class="lead">
+                    I first wrote HTML in 8th grade. Then I discovered React, and didn't touch raw HTML again for years. Building this site brought me back — and it took a mentor to convince me that was the right move.
+                </p>
+
+                <h2>Where It Started</h2>
+
+                <p>
+                    In 8th grade, I built my first webpage. It was exactly what you'd expect: a garish background color, a centered heading, maybe a blinking text tag if I was feeling bold. But it worked, and I understood every line of it. I knew what the browser was doing because there was nothing between me and the browser.
+                </p>
+
+                <p>
+                    Then I discovered frameworks. React first, then Vue. Suddenly I had component trees, state management, hot module reloading, a whole ecosystem of tools that promised to make development faster and more powerful. And it was, for a while. I got a lot done. I stopped thinking about the browser as a thing that rendered HTML and started thinking about it as a runtime for JavaScript.
+                </p>
+
+                <p>
+                    I didn't go back to plain HTML for a long time. It felt like regression — like trading a power drill for a hand screwdriver.
+                </p>
+
+                <h2>The Weight of the Ecosystem</h2>
+
+                <p>
+                    The longer I spent building with open source packages, the more I noticed a particular kind of friction that nobody talks about enough. It's not that the packages don't work — most of them do, impressively well. It's the carrying cost. Every dependency you add comes with its own documentation to read, its own breaking changes to track, its own mental model to hold alongside all the others.
+                </p>
+
+                <p>
+                    I'd start a simple project and find myself spending the first hour on package management. Which version of this library is compatible with that one? Why is this peer dependency throwing a warning? What changed in v3 that broke the behavior I was relying on from v2? None of that is the actual problem I came to solve. It's scaffolding around the scaffolding.
+                </p>
+
+                <p>
+                    The context load is real. Before you write a single line of meaningful code, you're already carrying a cognitive burden — all the conventions, configuration, and quirks of the tools you've chosen. For a complex product with a team, that overhead gets justified by the scale of what you're building. For a personal site, or a quick experiment, or anything where the goal is to just make the thing and ship it, the overhead can easily outweigh what you're building.
+                </p>
+
+                <p>
+                    I felt this accumulating for a while before I could name it. Vibe coding — the instinct-led, move-fast approach I was trying to practice — kept getting interrupted by the machinery of the ecosystem.
+                </p>
+
+                <h2>What Taha Taught Me</h2>
+
+                <p>
+                    I started working with <a href="https://github.com/MLnomads" target="_blank" rel="noopener noreferrer">Taha Bouhsine</a>, a researcher and developer whose philosophy on software is stripped of pretense. He doesn't reach for tools to signal sophistication. He reaches for them when nothing simpler will do — and he's usually surprised how often something simpler will do.
+                </p>
+
+                <p>
+                    His advice was direct: start with raw HTML, vanilla JavaScript, and basic CSS. Not as a constraint exercise. Not as a retro aesthetic choice. As a genuine first principle. The browser is extraordinarily capable on its own. Most of what frameworks give you is convenience — and convenience has a price when it becomes the only way you know how to work.
+                </p>
+
+                <p>
+                    He pushed me to ask a question before every tool I reached for: what does this actually solve, and can the platform solve it instead? More often than I expected, the answer was yes. A CSS variable instead of a design token library. A fetch call instead of a data-fetching abstraction. A standard form instead of a controlled input managed by a state library.
+                </p>
+
+                <p>
+                    This isn't about being contrarian toward modern tooling. It's about knowing the floor. If you've never built without the framework, you don't actually know what the framework is doing for you. You're flying on instruments without understanding the plane.
+                </p>
+
+                <h2>Going Back to Basics</h2>
+
+                <p>
+                    Building this site in raw HTML felt unfamiliar at first — not because HTML is hard, but because I'd been abstracted away from it for so long. I kept reaching for things that weren't there. Where's the component? Where's the router? Where do I put the state?
+                </p>
+
+                <p>
+                    After a few hours, those instincts settled. The page didn't need a router. It needed an anchor tag. The content didn't need state. It needed to just be there, in the markup, where the browser could find it. The muscle memory for simpler solutions came back, and with it came something I hadn't felt in a while: the directness of working without a layer between my intentions and the result.
+                </p>
+
+                <p>
+                    Every file is self-contained. Every style is visible. Every behavior is a few lines of vanilla JavaScript I wrote myself and can read back without a context switch. If something breaks, I know exactly where to look. That kind of transparency is genuinely valuable, and it's something the framework ecosystem quietly erodes over time.
+                </p>
+
+                <h2>This Philosophy at Work: Azetta.ai</h2>
+
+                <p>
+                    What started as a personal lesson about building a website has become a standing policy at <a href="https://azetta.ai" target="_blank" rel="noopener noreferrer">Azetta.ai</a>. No frameworks. No third-party packages, unless the alternative is genuinely unreasonable. When we need a tool, we build it.
+                </p>
+
+                <p>
+                    This sounds extreme until you think about what it means to be a technical team in the AI era. AI has fundamentally changed the calculus of custom development. The thing that used to make reaching for a library rational — the time and expertise required to write something yourself — is no longer the barrier it was. You can describe exactly what you need, build it to fit your exact context, and end up with something smaller, faster, and more understandable than any general-purpose package could be.
+                </p>
+
+                <p>
+                    Open source packages are built to serve everyone. That generality is their strength and their cost. They handle edge cases you'll never hit. They carry abstractions designed for scale you don't have. They make decisions you'd make differently if the code were yours. When you reach for a package, you're inheriting someone else's judgment about what the problem looks like — and that judgment was formed for a different project, by people solving a different set of constraints.
+                </p>
+
+                <p>
+                    When you build it yourself, the code reflects exactly what you understand the problem to be. Nothing more. It's shaped by your context because it came from your context. And in a domain as fast-moving as AI, that matters. The landscape shifts constantly — new models, new APIs, new patterns that invalidate the assumptions of tools built six months ago. A codebase full of third-party dependencies is a codebase full of someone else's bets on how the future will look. A codebase you own is something you can adapt on your own terms.
+                </p>
+
+                <p>
+                    There's also something honest about the constraint. If you can't build it yourself, you probably don't understand it well enough to use it responsibly anyway. Being forced to implement the thing — even a rough version of it — builds an intuition about how it works, what can go wrong, and where the real complexity lives. You can't get that from reading a README.
+                </p>
+
+                <h2>Less is More</h2>
+
+                <p>
+                    "Less is more" is easy to say and hard to practice. The default instinct in software development is accumulation — more features, more libraries, more abstraction. Each addition feels like progress because you're adding capability. But capability you don't need isn't an asset; it's surface area to maintain.
+                </p>
+
+                <p>
+                    The site you're reading right now has no build step. No node_modules folder. No configuration files. It's HTML and CSS and a small amount of JavaScript. It loads fast because there's nothing to load except content. It's maintainable because anyone who knows HTML can open a file and understand what it does. That's not an accident of technology — it's the result of a deliberate decision to own what we build.
+                </p>
+
+                <p>
+                    That same discipline is what we carry into Azetta. Every tool we use is a tool we understand. Every module that exists in the codebase earned its place because we needed it specifically, not because it came with the package we actually wanted. The goal is a system that does exactly what we intend and nothing we don't — one where the whole team can hold the full picture in their heads.
+                </p>
+
+                <p>
+                    I think about the version of me in 8th grade who built that first webpage with no awareness of the conventions he was skipping. He wasn't doing it wrong. He was doing it directly. The frameworks I learned later were useful — they are useful, for the right things — but they were never supposed to replace the understanding underneath. They were supposed to build on top of it.
+                </p>
+
+                <p>
+                    Starting over with basics didn't feel like going backward. It felt like returning to something I should have kept hold of the whole time. And the more we build this way at Azetta, the more convinced I am that in the AI era, this is the right way to be technical — not reaching for what's available, but building exactly what you need.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="social-links">
+                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
+                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
+                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
+            </div>
+            <p>&copy; 2026 Douglas Seo. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
