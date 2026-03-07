@@ -17,22 +17,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html" class="side-nav-active">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -148,6 +133,127 @@
                     The site you're reading right now has no build step. No node_modules folder. No configuration files. It's HTML and CSS and a small amount of JavaScript. It loads fast because there's nothing to load except content. It's maintainable because anyone who knows HTML can open a file and understand what it does. That's not an accident of technology — it's the result of a deliberate decision to own what we build.
                 </p>
 
+                <div class="viz-block" id="stack-viz">
+                    <div class="viz-title">Complexity Comparison — Typical React App vs. This Site</div>
+                    <canvas id="stack-canvas" style="width:100%;border-radius:4px;margin-bottom:20px;"></canvas>
+                    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;" id="layers-compare">
+                        <div style="flex:1;min-width:140px;max-width:200px;">
+                            <div class="viz-stack-col-label" style="color:#dc2626;">React App</div>
+                            <div class="viz-stack-layer" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#991b1b;">Intent</div>
+                            <div style="text-align:center;color:#d1d5db;font-size:10px;margin:1px 0;">↓</div>
+                            <div class="viz-stack-layer" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#991b1b;">JSX / TSX</div>
+                            <div style="text-align:center;color:#d1d5db;font-size:10px;margin:1px 0;">↓</div>
+                            <div class="viz-stack-layer" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#991b1b;">Virtual DOM</div>
+                            <div style="text-align:center;color:#d1d5db;font-size:10px;margin:1px 0;">↓</div>
+                            <div class="viz-stack-layer" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#991b1b;">React Runtime</div>
+                            <div style="text-align:center;color:#d1d5db;font-size:10px;margin:1px 0;">↓</div>
+                            <div class="viz-stack-layer" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#991b1b;">Webpack / Vite</div>
+                            <div style="text-align:center;color:#d1d5db;font-size:10px;margin:1px 0;">↓</div>
+                            <div class="viz-stack-layer" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);color:#065f46;">Browser</div>
+                            <div style="font-size:9px;color:#dc2626;text-align:center;margin-top:6px;font-weight:600;">5 layers to carry</div>
+                        </div>
+                        <div style="flex:1;min-width:140px;max-width:200px;">
+                            <div class="viz-stack-col-label" style="color:#059669;">This Site</div>
+                            <div class="viz-stack-layer" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);color:#065f46;">Intent</div>
+                            <div style="text-align:center;color:#d1d5db;font-size:10px;margin:1px 0;">↓</div>
+                            <div class="viz-stack-layer" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);color:#065f46;">HTML / CSS / JS</div>
+                            <div style="text-align:center;color:#d1d5db;font-size:10px;margin:1px 0;">↓</div>
+                            <div class="viz-stack-layer" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);color:#065f46;">Browser</div>
+                            <div style="font-size:9px;color:#059669;text-align:center;margin-top:6px;font-weight:600;">1 layer to carry</div>
+                        </div>
+                    </div>
+                    <div class="viz-caption">Each abstraction layer is cognitive overhead you carry every time you work in the codebase. Fewer layers = faster iteration, easier debugging, and code that reflects exactly what you intend.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var viz = document.getElementById('stack-viz');
+                    var canvas = document.getElementById('stack-canvas');
+                    var ctx = canvas.getContext('2d');
+                    var started = false;
+
+                    var metrics = [
+                        { label: 'npm packages', react: 800, ours: 0, unit: '' },
+                        { label: 'Config files', react: 12, ours: 1, unit: '' },
+                        { label: 'Build time (s)', react: 30, ours: 0, unit: 's' },
+                        { label: 'Abstraction layers', react: 5, ours: 1, unit: '' }
+                    ];
+                    var MAX_VAL = 800;
+
+                    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+                    function drawBars(p) {
+                        var W = canvas.width, H = canvas.height;
+                        var pad = { top: 28, right: 20, bottom: 46, left: 20 };
+                        var cw = W - pad.left - pad.right;
+                        var ch = H - pad.top - pad.bottom;
+                        ctx.clearRect(0, 0, W, H);
+
+                        var n = metrics.length;
+                        var groupW = cw / n;
+                        var barW = groupW * 0.28;
+                        var gap = groupW * 0.07;
+
+                        ctx.font = '10px sans-serif'; ctx.fillStyle = '#ef4444';
+                        ctx.fillRect(pad.left, 8, 12, 10);
+                        ctx.fillStyle = '#6b7280'; ctx.fillText('React app', pad.left + 16, 18);
+                        ctx.fillStyle = '#10b981';
+                        ctx.fillRect(pad.left + 90, 8, 12, 10);
+                        ctx.fillStyle = '#6b7280'; ctx.fillText('This site', pad.left + 106, 18);
+
+                        ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+                        for (var i = 0; i <= 4; i++) {
+                            var yg = pad.top + ch - ch * i / 4;
+                            ctx.beginPath(); ctx.moveTo(pad.left, yg); ctx.lineTo(pad.left + cw, yg); ctx.stroke();
+                        }
+
+                        for (var i = 0; i < n; i++) {
+                            var m = metrics[i];
+                            var gx = pad.left + i * groupW;
+                            var cx1 = gx + groupW * 0.5 - barW - gap * 0.5;
+                            var cx2 = gx + groupW * 0.5 + gap * 0.5;
+
+                            var rh = (Math.log(m.react + 1) / Math.log(MAX_VAL + 1)) * ch * easeOut(p);
+                            ctx.fillStyle = '#ef4444cc';
+                            ctx.fillRect(cx1, pad.top + ch - rh, barW, rh);
+
+                            var oh = (Math.log(m.ours + 1) / Math.log(MAX_VAL + 1)) * ch * easeOut(p);
+                            if (oh < 2 && m.ours === 0 && p > 0.5) oh = 2;
+                            ctx.fillStyle = m.ours === 0 ? '#10b981' : '#10b981cc';
+                            ctx.fillRect(cx2, pad.top + ch - oh, barW, oh);
+
+                            if (p > 0.85) {
+                                ctx.fillStyle = '#374151'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+                                ctx.fillText(m.react + m.unit, cx1 + barW/2, pad.top + ch - rh - 4);
+                                ctx.fillText(m.ours + m.unit, cx2 + barW/2, pad.top + ch - Math.max(oh, 8) - 4);
+                            }
+
+                            ctx.fillStyle = '#6b7280'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+                            ctx.fillText(m.label, gx + groupW/2, pad.top + ch + 14);
+                        }
+                    }
+
+                    function start() {
+                        var W = viz.clientWidth - 52;
+                        canvas.width = Math.max(W, 200);
+                        canvas.height = 160;
+                        var t0 = null, dur = 1600;
+                        function frame(ts) {
+                            if (!t0) t0 = ts;
+                            var p = (ts - t0) / dur;
+                            drawBars(Math.min(p, 1));
+                            if (p < 1) requestAnimationFrame(frame);
+                        }
+                        requestAnimationFrame(frame);
+                    }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) { if (e.isIntersecting && !started) { started = true; start(); } });
+                    }, { threshold: 0.2 });
+                    observer.observe(viz);
+                })();
+                </script>
+
                 <p>
                     That same discipline is what we carry into Azetta. Every tool we use is a tool we understand. Every module that exists in the codebase earned its place because we needed it specifically, not because it came with the package we actually wanted. The goal is a system that does exactly what we intend and nothing we don't — one where the whole team can hold the full picture in their heads.
                 </p>
@@ -188,6 +294,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

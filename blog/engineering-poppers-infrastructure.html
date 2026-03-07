@@ -18,22 +18,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html" class="side-nav-active">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -91,6 +76,142 @@
                     The lesson is absolute: flatten your data. Duplicate it if necessary. Denormalization is not a dirty word in NoSQL — it's the architecture. Design your collections around the queries you'll actually run, not around the object hierarchy that feels natural. Every time we refactored a nested structure into a flat collection with the right fields, performance improved and the query logic simplified. We learned this late. Now we design flat from day one.
                 </p>
 
+                <div class="viz-block" id="firestore-viz">
+                    <div class="viz-title">Nested vs. Flat — The Cost of Nesting</div>
+                    <canvas id="firestore-canvas" style="width:100%;border-radius:4px;"></canvas>
+                    <div class="viz-caption">Nested reads cascade through subcollections — each level is a separate Firestore read. Flat collections answer the same query in one read.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var viz = document.getElementById('firestore-viz');
+                    var canvas = document.getElementById('firestore-canvas');
+                    var ctx = canvas.getContext('2d');
+                    var started = false, animId = null;
+                    var frame = 0;
+                    var CYCLE = 180; // frames per full animation cycle
+
+                    var nestedNodes = [
+                        { label: 'users/', depth: 0, reads: true },
+                        { label: '  {userId}/', depth: 1, reads: true },
+                        { label: '    transactions/', depth: 2, reads: true },
+                        { label: '      {txId}', depth: 3, reads: true },
+                        { label: '      {txId}', depth: 3, reads: true },
+                        { label: '  {userId}/', depth: 1, reads: true },
+                        { label: '    transactions/', depth: 2, reads: true },
+                        { label: '      {txId}', depth: 3, reads: true }
+                    ];
+
+                    var flatNodes = [
+                        { label: 'transactions/', depth: 0, reads: false },
+                        { label: '  {txId}  userId, amount, ts', depth: 1, reads: false },
+                        { label: '  {txId}  userId, amount, ts', depth: 1, reads: false },
+                        { label: '  {txId}  userId, amount, ts', depth: 1, reads: false }
+                    ];
+
+                    function draw(t) {
+                        var W = canvas.width, H = canvas.height;
+                        ctx.clearRect(0, 0, W, H);
+                        var half = W / 2;
+                        var lineH = H / 11;
+                        var t_norm = (t % CYCLE) / CYCLE;
+
+                        ctx.strokeStyle = '#e5e7eb';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath(); ctx.moveTo(half, 10); ctx.lineTo(half, H - 30); ctx.stroke();
+
+                        ctx.font = 'bold 11px monospace';
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = '#dc2626';
+                        ctx.fillText('Before: Nested', half * 0.5, 18);
+                        ctx.fillStyle = '#059669';
+                        ctx.fillText('After: Flat', half * 1.5, 18);
+
+                        ctx.font = '9px sans-serif';
+                        ctx.fillStyle = '#9ca3af';
+                        ctx.fillText('Query: all transactions last 24h', half * 0.5, H - 10);
+                        ctx.fillText('Query: all transactions last 24h', half * 1.5, H - 10);
+
+                        var numReads = nestedNodes.length;
+                        var readHighlight = Math.floor(t_norm * (numReads + 1));
+                        ctx.font = '10px monospace';
+                        ctx.textAlign = 'left';
+                        for (var i = 0; i < nestedNodes.length; i++) {
+                            var n = nestedNodes[i];
+                            var y = 32 + i * lineH;
+                            var highlight = i <= readHighlight - 1;
+                            if (highlight) {
+                                ctx.fillStyle = 'rgba(239,68,68,0.08)';
+                                ctx.fillRect(8, y - lineH * 0.7, half - 16, lineH);
+                                ctx.fillStyle = '#dc2626';
+                            } else {
+                                ctx.fillStyle = '#6b7280';
+                            }
+                            ctx.fillText(n.label, 14, y);
+                            if (highlight) {
+                                ctx.font = '8px sans-serif';
+                                ctx.fillStyle = '#ef4444';
+                                ctx.textAlign = 'right';
+                                ctx.fillText('read', half - 12, y);
+                                ctx.textAlign = 'left';
+                                ctx.font = '10px monospace';
+                            }
+                        }
+
+                        ctx.font = 'bold 12px sans-serif';
+                        ctx.textAlign = 'center';
+                        var visibleReads = Math.min(readHighlight, numReads);
+                        ctx.fillStyle = visibleReads > 0 ? '#dc2626' : '#d1d5db';
+                        ctx.fillText(visibleReads + ' reads', half * 0.5, H - 22);
+
+                        ctx.font = '10px monospace';
+                        ctx.textAlign = 'left';
+                        var flatPhase = t_norm > 0.5 ? (t_norm - 0.5) * 2 : 0;
+                        for (var i = 0; i < flatNodes.length; i++) {
+                            var n = flatNodes[i];
+                            var y = 32 + i * lineH;
+                            if (flatPhase > 0) {
+                                ctx.fillStyle = 'rgba(16,185,129,0.08)';
+                                ctx.fillRect(half + 8, y - lineH * 0.7, half - 16, lineH);
+                                ctx.fillStyle = i === 0 ? '#059669' : '#10b981';
+                            } else {
+                                ctx.fillStyle = '#6b7280';
+                            }
+                            ctx.fillText(n.label, half + 14, y);
+                        }
+                        if (flatPhase > 0) {
+                            ctx.font = 'bold 12px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillStyle = '#059669';
+                            ctx.fillText('1 read', half * 1.5, H - 22);
+                            ctx.font = '8px sans-serif';
+                            ctx.fillStyle = '#10b981';
+                            ctx.fillText('index on (userId, ts)', half * 1.5, H - 10);
+                        }
+                    }
+
+                    function animate() {
+                        frame++;
+                        draw(frame);
+                        animId = requestAnimationFrame(animate);
+                    }
+
+                    function start() {
+                        var W = viz.clientWidth - 52;
+                        canvas.width = Math.max(W, 200);
+                        canvas.height = 200;
+                        animate();
+                    }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) {
+                            if (e.isIntersecting && !started) { started = true; start(); }
+                        });
+                    }, { threshold: 0.2 });
+                    observer.observe(viz);
+                })();
+                </script>
+
                 <h2>Caching Is the Secret</h2>
 
                 <p>
@@ -105,6 +226,110 @@
                     The shift in thinking is from "fetch what I need when I need it" to "what do I already have, and when is the right moment to refresh it?" It requires discipline in the implementation and pays off immediately in both cost and speed. A cached read is zero latency. No cache strategy is a compounding bill.
                 </p>
 
+                <div class="viz-block" id="cache-viz">
+                    <div class="viz-title">Caching Impact — Firestore Reads per Session</div>
+                    <canvas id="cache-canvas" style="width:100%;border-radius:4px;"></canvas>
+                    <div class="viz-caption">Hot paths (user profile, business info, reward config) went from re-fetched every screen load to cached. The fastest read is the one you never make.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var viz = document.getElementById('cache-viz');
+                    var canvas = document.getElementById('cache-canvas');
+                    var ctx = canvas.getContext('2d');
+                    var started = false;
+
+                    var bars = [
+                        { label: 'User Profile', before: 28, after: 1 },
+                        { label: 'Business Info', before: 22, after: 1 },
+                        { label: 'Reward Config', before: 18, after: 1 },
+                        { label: 'Transactions', before: 12, after: 10 },
+                        { label: 'Feed Data', before: 35, after: 8 }
+                    ];
+                    var MAX_VAL = 40;
+
+                    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+                    function drawBars(progress) {
+                        var W = canvas.width, H = canvas.height;
+                        var p = easeOut(Math.min(progress, 1));
+                        var pad = { top: 30, right: 20, bottom: 40, left: 20 };
+                        var cw = W - pad.left - pad.right;
+                        var ch = H - pad.top - pad.bottom;
+                        ctx.clearRect(0, 0, W, H);
+
+                        var n = bars.length;
+                        var groupW = cw / n;
+                        var barW = groupW * 0.28;
+                        var gap = groupW * 0.06;
+
+                        ctx.font = '10px sans-serif';
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fillRect(pad.left, 8, 12, 10);
+                        ctx.fillStyle = '#6b7280';
+                        ctx.fillText('Without cache', pad.left + 16, 18);
+                        ctx.fillStyle = '#10b981';
+                        ctx.fillRect(pad.left + 110, 8, 12, 10);
+                        ctx.fillStyle = '#6b7280';
+                        ctx.fillText('With cache', pad.left + 126, 18);
+
+                        ctx.strokeStyle = '#e5e7eb';
+                        ctx.lineWidth = 1;
+                        for (var yi = 0; yi <= 4; yi++) {
+                            var yp = pad.top + ch - (ch * yi / 4);
+                            ctx.beginPath(); ctx.moveTo(pad.left, yp); ctx.lineTo(W - pad.right, yp); ctx.stroke();
+                        }
+
+                        for (var i = 0; i < n; i++) {
+                            var b = bars[i];
+                            var gx = pad.left + i * groupW;
+                            var cx1 = gx + groupW * 0.5 - barW - gap * 0.5;
+                            var cx2 = gx + groupW * 0.5 + gap * 0.5;
+
+                            var bh = (b.before / MAX_VAL) * ch * p;
+                            ctx.fillStyle = '#ef4444cc';
+                            ctx.fillRect(cx1, pad.top + ch - bh, barW, bh);
+
+                            var ah = (b.after / MAX_VAL) * ch * p;
+                            ctx.fillStyle = '#10b981cc';
+                            ctx.fillRect(cx2, pad.top + ch - ah, barW, ah);
+
+                            if (p > 0.8) {
+                                ctx.fillStyle = '#374151';
+                                ctx.font = 'bold 10px sans-serif';
+                                ctx.textAlign = 'center';
+                                ctx.fillText(b.before, cx1 + barW / 2, pad.top + ch - bh - 4);
+                                ctx.fillText(b.after, cx2 + barW / 2, pad.top + ch - ah - 4);
+                            }
+
+                            ctx.fillStyle = '#6b7280';
+                            ctx.font = '9px sans-serif';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(b.label, gx + groupW / 2, pad.top + ch + 14);
+                        }
+                    }
+
+                    function start() {
+                        var W = viz.clientWidth - 52;
+                        canvas.width = Math.max(W, 200);
+                        canvas.height = 180;
+                        var t0 = null, dur = 1400;
+                        function frame(ts) {
+                            if (!t0) t0 = ts;
+                            var p = (ts - t0) / dur;
+                            drawBars(p);
+                            if (p < 1) requestAnimationFrame(frame);
+                        }
+                        requestAnimationFrame(frame);
+                    }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) { if (e.isIntersecting && !started) { started = true; start(); } });
+                    }, { threshold: 0.25 });
+                    observer.observe(viz);
+                })();
+                </script>
+
                 <h2>CAP Theorem in Practice</h2>
 
                 <p>
@@ -118,6 +343,135 @@
                 <p>
                     This is a product decision as much as a technical one. Your CAP tradeoffs are downstream of what your users will actually tolerate, and most consumer users will not tolerate latency for the sake of consistency they'd never notice.
                 </p>
+
+                <div class="viz-block" id="cap-viz">
+                    <div class="viz-title">CAP Theorem — Click a Side to Explore the Trade-off</div>
+                    <div style="display:flex;flex-direction:column;align-items:center;">
+                        <svg id="cap-svg" viewBox="0 0 320 240" style="width:min(320px,100%);height:auto;" aria-label="CAP theorem triangle"></svg>
+                        <div class="viz-cap-info" id="cap-info">
+                            <strong>Popper chose AP</strong> — Available + Partition-tolerant. Click any side to explore the trade-off.
+                        </div>
+                    </div>
+                    <div class="viz-caption">Every distributed system must sacrifice one of C, A, or P under network partition. Popper chose AP: show users something real and fast, reconcile with the server in the background.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var svg = document.getElementById('cap-svg');
+                    var info = document.getElementById('cap-info');
+                    var NS = 'http://www.w3.org/2000/svg';
+
+                    // Triangle vertices: C (top), A (bottom-left), P (bottom-right)
+                    var C = { x: 160, y: 30 };
+                    var A = { x: 40,  y: 210 };
+                    var P = { x: 280, y: 210 };
+                    var corners = [
+                        { id: 'C', pos: C, anchor: 'middle', dy: -12, label: 'C', sublabel: 'Consistency' },
+                        { id: 'A', pos: A, anchor: 'end',    dy: 20,  label: 'A', sublabel: 'Availability' },
+                        { id: 'P', pos: P, anchor: 'start',  dy: 20,  label: 'P', sublabel: 'Partition\nTolerance' }
+                    ];
+                    var sides = [
+                        {
+                            id: 'CA', p1: C, p2: A,
+                            label: 'CA', midX: (C.x+A.x)/2 - 18, midY: (C.y+A.y)/2,
+                            info: '<strong>CA — Consistent + Available</strong><br>Works only when there are no network partitions. Rare in real distributed systems. Traditional relational DBs are CA in single-node setups.',
+                            color: '#d97706'
+                        },
+                        {
+                            id: 'AP', p1: A, p2: P,
+                            label: 'AP ✓ Popper', midX: (A.x+P.x)/2, midY: (A.y+P.y)/2 + 16,
+                            info: '<strong>AP — Available + Partition-tolerant</strong> <em>(Popper\'s choice)</em><br>Show optimistic local state immediately. Reconcile with the server in the background. A user who sees stale data is annoyed — a user who sees a spinner is gone.',
+                            color: '#3b82f6'
+                        },
+                        {
+                            id: 'CP', p1: C, p2: P,
+                            label: 'CP', midX: (C.x+P.x)/2 + 14, midY: (C.y+P.y)/2,
+                            info: '<strong>CP — Consistent + Partition-tolerant</strong><br>Guarantees strong consistency but sacrifices availability when the network is unreliable. Right for financial transactions, balances, and anything where stale reads cause real harm.',
+                            color: '#8b5cf6'
+                        }
+                    ];
+
+                    var activeSide = 'AP';
+
+                    function midPt(p1, p2) { return { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 }; }
+
+                    function render() {
+                        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+                        sides.forEach(function(s) {
+                            var isActive = s.id === activeSide;
+                            var line = document.createElementNS(NS, 'line');
+                            line.setAttribute('x1', s.p1.x); line.setAttribute('y1', s.p1.y);
+                            line.setAttribute('x2', s.p2.x); line.setAttribute('y2', s.p2.y);
+                            line.setAttribute('stroke', isActive ? s.color : '#d1d5db');
+                            line.setAttribute('stroke-width', isActive ? '3' : '1.5');
+                            line.setAttribute('stroke-linecap', 'round');
+                            line.style.cursor = 'pointer';
+                            line.style.transition = 'stroke 0.3s, stroke-width 0.3s';
+                            line.addEventListener('click', (function(sid) { return function() { activeSide = sid; render(); updateInfo(); }; })(s.id));
+                            svg.appendChild(line);
+
+                            var hitLine = document.createElementNS(NS, 'line');
+                            hitLine.setAttribute('x1', s.p1.x); hitLine.setAttribute('y1', s.p1.y);
+                            hitLine.setAttribute('x2', s.p2.x); hitLine.setAttribute('y2', s.p2.y);
+                            hitLine.setAttribute('stroke', 'transparent');
+                            hitLine.setAttribute('stroke-width', '18');
+                            hitLine.style.cursor = 'pointer';
+                            hitLine.addEventListener('click', (function(sid) { return function() { activeSide = sid; render(); updateInfo(); }; })(s.id));
+                            svg.appendChild(hitLine);
+
+                            var lt = document.createElementNS(NS, 'text');
+                            lt.setAttribute('x', s.midX); lt.setAttribute('y', s.midY);
+                            lt.setAttribute('text-anchor', 'middle');
+                            lt.setAttribute('font-size', '9');
+                            lt.setAttribute('fill', isActive ? s.color : '#9ca3af');
+                            lt.textContent = s.label;
+                            lt.style.cursor = 'pointer';
+                            lt.addEventListener('click', (function(sid) { return function() { activeSide = sid; render(); updateInfo(); }; })(s.id));
+                            svg.appendChild(lt);
+                        });
+
+                        corners.forEach(function(c) {
+                            var circle = document.createElementNS(NS, 'circle');
+                            circle.setAttribute('cx', c.pos.x); circle.setAttribute('cy', c.pos.y);
+                            circle.setAttribute('r', '14');
+                            circle.setAttribute('fill', '#f3f4f6');
+                            circle.setAttribute('stroke', '#d1d5db');
+                            circle.setAttribute('stroke-width', '1.5');
+                            svg.appendChild(circle);
+
+                            var lt = document.createElementNS(NS, 'text');
+                            lt.setAttribute('x', c.pos.x); lt.setAttribute('y', c.pos.y + 5);
+                            lt.setAttribute('text-anchor', 'middle');
+                            lt.setAttribute('font-size', '13');
+                            lt.setAttribute('font-weight', 'bold');
+                            lt.setAttribute('fill', '#1f2937');
+                            lt.textContent = c.label;
+                            svg.appendChild(lt);
+
+                            var sublabel = c.sublabel.split('\n');
+                            sublabel.forEach(function(line, li) {
+                                var st = document.createElementNS(NS, 'text');
+                                st.setAttribute('x', c.pos.x);
+                                st.setAttribute('y', c.pos.y + c.dy + li * 12);
+                                st.setAttribute('text-anchor', c.anchor);
+                                st.setAttribute('font-size', '9');
+                                st.setAttribute('fill', '#9ca3af');
+                                st.textContent = line;
+                                svg.appendChild(st);
+                            });
+                        });
+                    }
+
+                    function updateInfo() {
+                        var s = sides.find(function(x) { return x.id === activeSide; });
+                        if (s) info.innerHTML = s.info;
+                    }
+
+                    render();
+                    updateInfo();
+                })();
+                </script>
 
                 <h2>Package Management Is Hell</h2>
 
@@ -193,6 +547,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         // Smooth scrolling for anchor links

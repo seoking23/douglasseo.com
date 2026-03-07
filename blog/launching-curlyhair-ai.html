@@ -18,22 +18,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html" class="side-nav-active">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -84,6 +69,161 @@
                 <p>
                     The problem with existing resources wasn't that they were wrong. There is excellent curly hair content online. The problem was discoverability and specificity. A YouTube video for Type 4C hair doesn't solve the same problem as one for Type 3B. A product recommendation for someone in a humid climate doesn't work the same in a dry one. Generic advice applied to specific texture does damage. The knowledge needed to be personalized — not just aggregated.
                 </p>
+
+                <div class="viz-block" id="hair-viz">
+                    <div class="viz-title">Hair Type Spectrum — The Vocabulary of Texture</div>
+                    <svg id="hair-svg" viewBox="0 0 520 260" style="width:100%;height:auto;" aria-label="Hair type classification tree"></svg>
+                    <div id="hair-tooltip" style="min-height:32px;font-size:0.75rem;color:#9ca3af;text-align:center;margin-top:10px;transition:opacity 0.2s,color 0.2s;">Hover any node to learn more</div>
+                    <div class="viz-caption">21 years without knowing her type. The right vocabulary is the first step toward the right care.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var NS = 'http://www.w3.org/2000/svg';
+                    var svg = document.getElementById('hair-svg');
+                    var tooltipEl = document.getElementById('hair-tooltip');
+                    var started = false;
+
+                    var tree = {
+                        label: 'Hair Type', x: 260, y: 28, desc: 'All textured hair is categorized into 4 types — each requiring different products, techniques, and routines.',
+                        children: [
+                            {
+                                label: 'Type 1', x: 65, y: 90, color: '#d6d3d1', desc: 'Straight — naturally glossy, resists curl. Little to no natural texture.',
+                                children: []
+                            },
+                            {
+                                label: 'Type 2', x: 175, y: 90, color: '#a8a29e', desc: 'Wavy — forms loose S-shapes. Prone to frizz, balances moisture carefully.',
+                                children: []
+                            },
+                            {
+                                label: 'Type 3', x: 310, y: 90, color: '#93c5fd', desc: 'Curly — defined curl pattern, high volume. Very sensitive to humidity and product build-up.',
+                                children: [
+                                    { label: '3A', x: 255, y: 175, color: '#bfdbfe', desc: '3A: Large, loose spirals. Responds well to light mousses and curl creams.' },
+                                    { label: '3B', x: 305, y: 175, color: '#93c5fd', desc: '3B: Tight springy ringlets. Needs regular deep conditioning to maintain elasticity. — Her type.', highlight: true },
+                                    { label: '3C', x: 355, y: 175, color: '#60a5fa', desc: '3C: Corkscrews, tightly packed. Prone to dryness, benefits from the LOC method.' }
+                                ]
+                            },
+                            {
+                                label: 'Type 4', x: 430, y: 90, color: '#fbbf24', desc: 'Coily — tightest curl pattern, most fragile. Requires maximum moisture and protective styling.',
+                                children: [
+                                    { label: '4A', x: 385, y: 175, color: '#fcd34d', desc: '4A: Defined S-coils, fine texture. Very prone to shrinkage — can shrink 70%+.' },
+                                    { label: '4B', x: 430, y: 175, color: '#fbbf24', desc: '4B: Z-pattern coils, less definition. Extremely porous, absorbs and loses moisture quickly.' },
+                                    { label: '4C', x: 475, y: 175, color: '#f59e0b', desc: '4C: Tightest coils, least definition, highest shrinkage (up to 75%). Needs the most moisture and the gentlest handling.' }
+                                ]
+                            }
+                        ]
+                    };
+
+                    // Collect all edges and nodes in draw order
+                    var edges = [];
+                    var allNodes = [];
+
+                    function collectTree(node, parent) {
+                        if (parent) edges.push({ x1: parent.x, y1: parent.y, x2: node.x, y2: node.y });
+                        allNodes.push(node);
+                        if (node.children) node.children.forEach(function(c) { collectTree(c, node); });
+                    }
+                    collectTree(tree, null);
+
+                    // Build SVG
+                    var edgeEls = [], nodeEls = [], labelEls = [];
+
+                    // Draw edges first (behind nodes)
+                    edges.forEach(function(e) {
+                        var line = document.createElementNS(NS, 'line');
+                        line.setAttribute('x1', e.x1); line.setAttribute('y1', e.y1);
+                        line.setAttribute('x2', e.x2); line.setAttribute('y2', e.y2);
+                        line.setAttribute('stroke', '#d1d5db');
+                        line.setAttribute('stroke-width', '1');
+                        var len = Math.sqrt(Math.pow(e.x2-e.x1,2) + Math.pow(e.y2-e.y1,2));
+                        line.setAttribute('stroke-dasharray', len);
+                        line.setAttribute('stroke-dashoffset', len);
+                        line.style.transition = 'none';
+                        svg.appendChild(line);
+                        edgeEls.push({ el: line, len: len });
+                    });
+
+                    allNodes.forEach(function(n) {
+                        var isHighlight = n.highlight;
+                        var isRoot = n === tree;
+                        var r = isRoot ? 22 : (n.children && n.children.length > 0 ? 18 : 14);
+
+                        if (isHighlight) {
+                            var glow = document.createElementNS(NS, 'circle');
+                            glow.setAttribute('cx', n.x); glow.setAttribute('cy', n.y); glow.setAttribute('r', r + 10);
+                            glow.setAttribute('fill', 'rgba(245,158,11,0.15)');
+                            glow.style.opacity = '0';
+                            svg.appendChild(glow);
+                            n._glow = glow;
+                        }
+
+                        var circle = document.createElementNS(NS, 'circle');
+                        circle.setAttribute('cx', n.x); circle.setAttribute('cy', n.y); circle.setAttribute('r', r);
+                        circle.setAttribute('fill', n.color || '#93c5fd');
+                        circle.setAttribute('stroke', isHighlight ? '#d97706' : '#d1d5db');
+                        circle.setAttribute('stroke-width', isHighlight ? '2.5' : '1.5');
+                        circle.style.opacity = '0';
+                        circle.style.cursor = 'pointer';
+                        svg.appendChild(circle);
+                        n._circle = circle;
+
+                        var text = document.createElementNS(NS, 'text');
+                        text.setAttribute('x', n.x); text.setAttribute('y', n.y + 4);
+                        text.setAttribute('text-anchor', 'middle');
+                        text.setAttribute('font-size', isRoot ? '11' : '10');
+                        text.setAttribute('font-weight', isHighlight ? 'bold' : '600');
+                        text.setAttribute('fill', isHighlight ? '#92400e' : '#374151');
+                        text.textContent = n.label;
+                        text.style.opacity = '0';
+                        text.style.cursor = 'pointer';
+                        text.style.pointerEvents = 'none';
+                        svg.appendChild(text);
+                        n._text = text;
+
+                        function over() {
+                            tooltipEl.textContent = n.desc;
+                            tooltipEl.style.color = isHighlight ? '#b45309' : '#1f2937';
+                        }
+                        function out() {
+                            tooltipEl.textContent = 'Hover any node to learn more';
+                            tooltipEl.style.color = '#9ca3af';
+                        }
+                        circle.addEventListener('mouseover', over);
+                        circle.addEventListener('mouseout', out);
+                        circle.addEventListener('touchstart', function(e) { e.preventDefault(); over(); }, { passive: false });
+                    });
+
+                    function animateIn() {
+                        // Animate edges
+                        edgeEls.forEach(function(e, i) {
+                            setTimeout(function() {
+                                e.el.style.transition = 'stroke-dashoffset 0.4s ease';
+                                e.el.setAttribute('stroke-dashoffset', '0');
+                            }, i * 80);
+                        });
+                        // Animate nodes
+                        allNodes.forEach(function(n, i) {
+                            setTimeout(function() {
+                                n._circle.style.transition = 'opacity 0.3s';
+                                n._circle.style.opacity = '1';
+                                n._text.style.transition = 'opacity 0.3s';
+                                n._text.style.opacity = '1';
+                                if (n._glow) { n._glow.style.transition = 'opacity 0.5s'; n._glow.style.opacity = '1'; }
+                            }, 100 + i * 100);
+                        });
+                    }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) {
+                            if (e.isIntersecting && !started) {
+                                started = true;
+                                animateIn();
+                            }
+                        });
+                    }, { threshold: 0.3 });
+                    observer.observe(document.getElementById('hair-viz'));
+                })();
+                </script>
 
                 <h2>Building the Thing</h2>
 
@@ -141,6 +281,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         // Smooth scrolling for anchor links

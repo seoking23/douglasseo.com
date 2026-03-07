@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Tokens You Don't See - Douglas Seo</title>
+    <meta name="description" content="Sequence packing, intra-document masking, and why the invisible engineering of your training data shapes everything the model learns.">
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="/public/css/base.css">
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
+    <link rel="stylesheet" href="/public/css/blog.css">
+    <style>
+        .article-source {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        .article-source a { color: #6b7280; }
+
+        .viz-block {
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .viz-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin: 0 0 1rem 0;
+            font-family: Georgia, serif;
+        }
+        .viz-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .viz-btn {
+            padding: 0.3rem 0.75rem;
+            font-size: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            background: white;
+            cursor: pointer;
+            font-family: Georgia, serif;
+            color: #374151;
+            transition: all 0.15s;
+        }
+        .viz-btn.active {
+            background: #374151;
+            color: white;
+            border-color: #374151;
+        }
+        .viz-btn:hover:not(.active) { background: #f3f4f6; }
+        .viz-caption {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.75rem;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        /* Attention mask grid */
+        #mask-viz {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        #mask-container {
+            overflow-x: auto;
+        }
+        .mask-grid {
+            display: grid;
+            gap: 2px;
+        }
+        .mask-cell {
+            width: 22px;
+            height: 22px;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0;
+            transition: background 0.25s;
+        }
+        .mask-cell.attend   { background: #3b82f6; }
+        .mask-cell.blocked  { background: #f3f4f6; }
+        .mask-cell.doc-sep  { background: #fbbf24; }
+        .mask-cell.query    { background: #1d4ed8; }
+
+        .mask-legend {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.72rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .legend-swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* Packing diagram */
+        .pack-diagram {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .pack-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .pack-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+            min-width: 70px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .pack-tokens {
+            display: flex;
+            gap: 2px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        .pack-tok {
+            height: 24px;
+            border-radius: 2px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: white;
+            font-family: Georgia, serif;
+            white-space: nowrap;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+        .pack-tok.doc-a   { background: #3b82f6; }
+        .pack-tok.doc-b   { background: #10b981; }
+        .pack-tok.doc-c   { background: #8b5cf6; }
+        .pack-tok.doc-d   { background: #f59e0b; }
+        .pack-tok.eos     { background: #9ca3af; min-width: 26px; }
+        .pack-tok.pad     { background: #e5e7eb; color: #9ca3af; min-width: 26px; }
+        .pack-tok.boundary { outline: 2px dashed #ef4444; }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="dotted-surface" id="dottedSurface"></div>
+        <div class="blog-layout">
+            <aside class="blog-side-nav"></aside>
+            <div class="blog-main">
+                <div class="article-container">
+            <a href="/blog/" class="back-link">← Table of Contents</a>
+
+            <div class="article-header">
+                <div class="chapter-label">Chapter 11</div>
+                <h1 class="article-title">The Tokens You Don't See</h1>
+                <div class="article-meta">
+                    <time datetime="2026-03-06">March 6, 2026</time>
+                    <span>•</span>
+                    <span>9 min read</span>
+                </div>
+                <p class="article-source">Derived from and in dialogue with <a href="https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook" target="_blank" rel="noopener noreferrer">The Smol Training Playbook</a> by Hugging Face (Ben Allal, Tunstall, Tazi et al., 2025). This chapter is my own synthesis and interpretation.</p>
+            </div>
+
+            <div class="article-content">
+                <p class="lead">
+                    Most discussions of language model training focus on what goes into the model — architecture, optimizer, learning rate. Fewer focus on what happens to the data before training begins. But the invisible decisions made at the sequence level — how documents are packed, where attention is allowed to flow, how boundaries between unrelated texts are handled — shape what the model learns as surely as any architectural choice.
+                </p>
+
+                <h2>The Packing Problem</h2>
+
+                <p>
+                    Language models train on fixed-length sequences. The transformer's attention mechanism operates over a sequence of some length — 2048 tokens, 4096 tokens, whatever you've chosen. But the documents in your training corpus have no idea what your sequence length is. A research paper might span 12,000 tokens. A short Python function might be 80. A tweet might be 15.
+                </p>
+
+                <p>
+                    The naive solution to variable-length documents is padding: take each document, add padding tokens to bring it up to the sequence length, and process each one individually. This is simple, but it is extraordinarily wasteful. If your average document is 400 tokens and your sequence length is 4096, you are wasting roughly 90% of your compute on attention over padding tokens that contribute nothing to learning. At the scale of billions of training tokens, this is not an acceptable inefficiency.
+                </p>
+
+                <p>
+                    The real solution is <strong>packing</strong>: shuffle your documents, concatenate them end-to-end with an end-of-sequence (EOS) token between each, then chunk the result into fixed-length sequences. A document that ends partway through a chunk is continued in the next chunk. You fill every training sequence to capacity, and no compute is wasted.
+                </p>
+
+                <!-- Visualization 1: Packing Diagram -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 1 — Document Packing into Fixed-Length Sequences</p>
+                    <div class="viz-controls">
+                        <button class="viz-btn active" id="packingBtn" onclick="showPacking('packed')">Packing (efficient)</button>
+                        <button class="viz-btn" id="paddingBtn" onclick="showPacking('padding')">Padding (wasteful)</button>
+                    </div>
+                    <div class="pack-diagram" id="packDiagram"></div>
+                    <p class="viz-caption" id="packCaption">Packing: four documents of different lengths are concatenated with EOS tokens and cut into two full-capacity sequences. No compute is wasted on padding.</p>
+                </div>
+
+                <p>
+                    In the HuggingFace playbook's ablation setup, sequences are packed to length 4096 tokens. About 80–90% of files in Common Crawl and GitHub are shorter than 2000 tokens, meaning the vast majority of documents are short enough that several will end up packed into the same training sequence. This is efficient — and it introduces a subtle problem.
+                </p>
+
+                <h2>The Cross-Document Contamination Problem</h2>
+
+                <p>
+                    Standard causal attention allows every token to attend to all preceding tokens in its sequence — regardless of whether those tokens came from the same document or a different one packed next to it. A token at position 3000 in a training sequence can, under standard masking, attend to context from positions 1, 2, and 3 — even if those positions are from a completely different document than the one the token is actually part of.
+                </p>
+
+                <p>
+                    This is not just conceptually odd. It introduces noise. Research by Zhao et al. found that allowing attention across document boundaries degrades model quality because the model receives spurious context — tokens from a recipe article attend to a nearby code snippet and learn spurious associations between them. The model's representation of each document gets contaminated by its neighbors.
+                </p>
+
+                <p>
+                    An additional observation from the SkyLadder team: intra-document masking effectively reduces the model's <em>average context length</em> during training. With packing and standard masking, every token sees up to 4096 tokens of context, even early in training. With document masking, each token only sees the context within its own document — which, for most of the short documents in Common Crawl, means seeing far fewer than 4096 tokens. SkyLadder found that shorter effective context lengths are actually better for early training stability, which provides a second, independent reason to mask document boundaries.
+                </p>
+
+                <h2>Intra-Document Masking</h2>
+
+                <p>
+                    The fix is conceptually simple: modify the attention mask so that tokens can only attend to previous tokens within the same document. When a training sequence contains four packed documents, each document operates as if it is the only one — tokens from document B cannot attend to tokens from document A, even if they're in the same sequence at earlier positions.
+                </p>
+
+                <!-- Visualization 2: Attention Mask -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 2 — Attention Mask: Causal vs. Intra-Document</p>
+                    <div class="viz-controls">
+                        <button class="viz-btn active" id="causalBtn" onclick="showMask('causal')">Standard causal</button>
+                        <button class="viz-btn" id="docMaskBtn" onclick="showMask('doc')">Intra-document</button>
+                    </div>
+                    <div id="mask-viz">
+                        <div id="mask-container"></div>
+                        <div class="mask-legend">
+                            <span class="legend-item"><span class="legend-swatch" style="background:#3b82f6"></span>Can attend</span>
+                            <span class="legend-item"><span class="legend-swatch" style="background:#f3f4f6;border:1px solid #d1d5db"></span>Blocked</span>
+                            <span class="legend-item"><span class="legend-swatch" style="background:#fbbf24"></span>EOS boundary</span>
+                            <span class="legend-item"><span class="legend-swatch" style="background:#1d4ed8"></span>Current query token</span>
+                        </div>
+                    </div>
+                    <p class="viz-caption" id="maskCaption">Standard causal masking: every token can attend to all previous tokens in the sequence, including those from different packed documents. Cross-document attention introduces noise from unrelated content.</p>
+                </div>
+
+                <p>
+                    The attention mask is a matrix where entry (i, j) indicates whether query token i is allowed to attend to key token j. Standard causal masking makes this a lower-triangular matrix of ones. Intra-document masking sets entries to zero wherever tokens i and j come from different documents — even if j comes before i in the sequence. The rest of the causal constraint is preserved: a token still cannot attend to future tokens within its own document.
+                </p>
+
+                <p>
+                    Operationally, implementing this requires knowing, for each position in a packed sequence, which document that position belongs to. This is tracked through a document ID tensor that travels alongside the token IDs. The attention implementation (typically FlashAttention at this scale) uses the document boundaries to construct the block-diagonal mask structure that intra-document masking requires.
+                </p>
+
+                <h2>When Masking Matters</h2>
+
+                <p>
+                    The ablation results from the playbook tell a specific story: <strong>at short context, document masking has limited impact; at long context, it becomes crucial.</strong>
+                </p>
+
+                <p>
+                    When HuggingFace ablated document masking during SmolLM3 pretraining at 4k context, they found identical loss curves and identical downstream evaluation scores compared to standard causal masking — with one small exception: a slight improvement on PIQA, a physical commonsense benchmark. The efficiency benefit (less spurious computation over document boundaries) is real, but the quality signal doesn't move much at short context because the noise from cross-document attention is relatively small when sequences are short.
+                </p>
+
+                <p>
+                    This mirrors what Meta found training Llama 3. At short context lengths, document masking was essentially a wash. But when they extended to long context — 64k, then 128k tokens — document masking became significant. At those context lengths, each training sequence spans many more documents, and the noise from cross-document attention accumulates. Masking it out produces meaningfully better representations of long-range context.
+                </p>
+
+                <p>
+                    The implication for training strategy: <strong>you should enable document masking from the start</strong>, even if it doesn't visibly help early. The cost of enabling it is negligible (a mask computation), and it sets you up correctly for long context extension later. Retrofitting it after the fact — turning on document masking midway through a training run — may produce inconsistent representations because part of the model's learning happened with different attention patterns.
+                </p>
+
+                <!-- Visualization 3: Long Context Impact -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 3 — Document Masking Impact: Short vs. Long Context</p>
+                    <div class="viz-controls">
+                        <button class="viz-btn active" id="shortCtxBtn" onclick="showContextImpact('short')">4k context</button>
+                        <button class="viz-btn" id="longCtxBtn" onclick="showContextImpact('long')">64k context</button>
+                    </div>
+                    <canvas id="contextChart" style="max-height:240px;"></canvas>
+                    <p class="viz-caption" id="contextCaption">At 4k context, standard masking and document masking produce nearly identical downstream scores. The gap opens significantly at 64k context, where sequences span many more documents and cross-document noise accumulates.</p>
+                </div>
+
+                <h2>Long Context Extension</h2>
+
+                <p>
+                    Packing and masking are not just pretraining concerns — they are directly implicated in how you extend a model's context window after pretraining. Most current practice involves training on short sequences (4k tokens) for most of the pretraining budget, then extending to longer sequences (32k, 64k, 128k) in a continuation phase. SmolLM3 went from 4k to 64k to 128k this way.
+                </p>
+
+                <p>
+                    During long-context extension, the effective batch size in tokens stays roughly constant (you still target the same number of tokens per gradient update), but now each sequence is much longer. Fewer documents fit into each sequence. With document masking already in place from pretraining, the transition is clean — the mask structure is already correct, and you're just extending the range over which within-document attention is allowed.
+                </p>
+
+                <p>
+                    Without document masking, the extension would require either retrofitting (risky) or accepting that the model was trained with inconsistent attention patterns during pretraining. Neither is ideal. This is why HuggingFace adopted document masking for SmolLM3 throughout the full training run despite it not visibly helping at short context — the benefit pays off when you extend.
+                </p>
+
+                <h2>What This Means for the Roadmap</h2>
+
+                <p>
+                    For the research loop described in Chapter 10 — baseline model, then YAT ablations, then MTEB fine-tuning — sequence preparation choices are not secondary. They are part of the recipe.
+                </p>
+
+                <p>
+                    At 60M–300M parameter scale on 4k sequences, document masking will likely not change your benchmark numbers. But it costs almost nothing to implement, and it sets the foundation for a training recipe that will generalize correctly when you extend context. The embedding fine-tuning stage for MTEB in particular will benefit from models that have learned clean within-document representations — retrieval and reranking tasks depend on understanding documents as coherent units, not arbitrary windows of tokens.
+                </p>
+
+                <p>
+                    Packing, meanwhile, is non-negotiable at any scale. Padding-based training is simply too inefficient to justify. The question is not whether to pack, but how to pack — and specifically whether to accompany packing with the mask that correctly constrains what each token is allowed to see. The answer is yes, and the implementation is straightforward enough that there is no good reason not to.
+                </p>
+
+                <p>
+                    The tokens you don't see — the padding tokens you eliminated, the cross-document contexts you masked, the EOS boundaries you carefully placed — shape the learned geometry as much as the tokens you do. What you leave out of the attention computation is itself a design decision.
+                </p>
+
+                <nav class="chapter-navigation">
+                    <a href="/blog/training-small-models.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Previous chapter</span>
+                        <span>← Chapter 10: Small Models, Sharp Instincts</span>
+                    </a>
+                    <span></span>
+                </nav>
+            </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="social-links">
+                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
+                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
+                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
+            </div>
+            <p>&copy; 2026 Douglas Seo. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/public/js/blog-nav.js"></script>
+    <script src="/public/js/dotted-surface.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+    // ── Packing diagram ───────────────────────────────────────────────────────
+    const DOC_COLORS = {
+        'doc-a': { bg: '#3b82f6', label: 'Doc A' },
+        'doc-b': { bg: '#10b981', label: 'Doc B' },
+        'doc-c': { bg: '#8b5cf6', label: 'Doc C' },
+        'doc-d': { bg: '#f59e0b', label: 'Doc D' },
+        'eos':   { bg: '#9ca3af', label: 'EOS' },
+        'pad':   { bg: '#e5e7eb', labelColor: '#9ca3af', label: 'PAD' },
+    };
+
+    // Sequence length = 20 tokens for visualization
+    // Doc A = 7 tokens, Doc B = 5 tokens, Doc C = 9 tokens, Doc D = 11 tokens
+    const DOCS = [
+        { type: 'doc-a', len: 7 },
+        { type: 'doc-b', len: 5 },
+        { type: 'doc-c', len: 9 },
+        { type: 'doc-d', len: 11 },
+    ];
+    const SEQ_LEN = 20;
+
+    function makeTok(type, label) {
+        const c = DOC_COLORS[type];
+        const div = document.createElement('div');
+        div.className = `pack-tok ${type}`;
+        div.style.background = c.bg;
+        if (c.labelColor) { div.style.color = c.labelColor; div.style.border = '1px solid #d1d5db'; }
+        div.textContent = label;
+        return div;
+    }
+
+    function buildPackedRows() {
+        // Flatten docs with EOS
+        const flat = [];
+        DOCS.forEach(doc => {
+            for (let i = 0; i < doc.len; i++) flat.push({ type: doc.type, i });
+            flat.push({ type: 'eos', i: 0 });
+        });
+        // Split into sequences of SEQ_LEN
+        const rows = [];
+        for (let s = 0; s < flat.length; s += SEQ_LEN) {
+            rows.push(flat.slice(s, s + SEQ_LEN));
+        }
+        return rows;
+    }
+
+    function buildPaddingRows() {
+        // Each doc padded to SEQ_LEN (only show first 2 docs to fit)
+        const rows = [];
+        DOCS.slice(0, 2).forEach(doc => {
+            const row = [];
+            for (let i = 0; i < doc.len; i++) row.push({ type: doc.type, i });
+            row.push({ type: 'eos', i: 0 });
+            while (row.length < SEQ_LEN) row.push({ type: 'pad', i: 0 });
+            rows.push(row);
+        });
+        return rows;
+    }
+
+    function renderRows(rows, showLabel) {
+        const container = document.getElementById('packDiagram');
+        container.innerHTML = '';
+        rows.forEach((row, ri) => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'pack-row';
+            const label = document.createElement('div');
+            label.className = 'pack-label';
+            label.textContent = `Seq ${ri + 1}`;
+            rowDiv.appendChild(label);
+            const tokens = document.createElement('div');
+            tokens.className = 'pack-tokens';
+            row.forEach(tok => {
+                const t = makeTok(tok.type, tok.type === 'eos' ? 'EOS' : tok.type === 'pad' ? 'PAD' : '');
+                tokens.appendChild(t);
+            });
+            rowDiv.appendChild(tokens);
+            container.appendChild(rowDiv);
+        });
+    }
+
+    function showPacking(mode) {
+        document.getElementById('packingBtn').classList.toggle('active', mode === 'packed');
+        document.getElementById('paddingBtn').classList.toggle('active', mode === 'padding');
+        if (mode === 'packed') {
+            renderRows(buildPackedRows());
+            document.getElementById('packCaption').textContent = 'Packing: four documents of different lengths are concatenated with EOS tokens and cut into two full-capacity sequences. No compute is wasted on padding.';
+        } else {
+            renderRows(buildPaddingRows());
+            document.getElementById('packCaption').textContent = 'Padding: each document is padded to the full sequence length. Gray PAD tokens waste attention compute — and with average doc length of ~400 tokens in Common Crawl, this discards ~90% of capacity.';
+        }
+    }
+
+    showPacking('packed');
+
+    // ── Attention mask grid ───────────────────────────────────────────────────
+    // Show a 16-token packed sequence: Doc A (5 tok + EOS), Doc B (5 tok + EOS), Doc C (4 tok)
+    const N = 16;
+    const DOC_MAP = [0,0,0,0,0,7, 1,1,1,1,1,7, 2,2,2,2]; // 7 = EOS boundary
+
+    function buildMaskGrid(type) {
+        const grid = [];
+        for (let q = 0; q < N; q++) {
+            const row = [];
+            for (let k = 0; k < N; k++) {
+                if (k > q) { row.push('blocked'); continue; }
+                if (DOC_MAP[k] === 7 || DOC_MAP[q] === 7) {
+                    // EOS tokens can always attend to same-doc context (causal)
+                    if (type === 'causal') row.push(k <= q ? 'attend' : 'blocked');
+                    else row.push(DOC_MAP[k] === DOC_MAP[q] || k === q ? 'attend' : 'blocked');
+                    continue;
+                }
+                if (type === 'causal') {
+                    row.push('attend');
+                } else {
+                    // doc masking: only attend within same document
+                    row.push(DOC_MAP[k] === DOC_MAP[q] ? 'attend' : 'blocked');
+                }
+            }
+            grid.push(row);
+        }
+        return grid;
+    }
+
+    function renderMask(type) {
+        const container = document.getElementById('mask-container');
+        container.innerHTML = '';
+        const grid = buildMaskGrid(type);
+        const outer = document.createElement('div');
+        outer.className = 'mask-grid';
+        outer.style.gridTemplateColumns = `repeat(${N}, 22px)`;
+        outer.style.gridTemplateRows = `repeat(${N}, 22px)`;
+
+        // We highlight query row = token 8 (in Doc B) to make it concrete
+        const QUERY_ROW = 8;
+
+        for (let q = 0; q < N; q++) {
+            for (let k = 0; k < N; k++) {
+                const cell = document.createElement('div');
+                const cellType = grid[q][k];
+                cell.className = 'mask-cell';
+                let bg;
+                if (q === QUERY_ROW && k === QUERY_ROW) bg = '#1d4ed8';
+                else if (DOC_MAP[k] === 7 || DOC_MAP[q] === 7) bg = cellType === 'attend' ? '#fbbf24' : '#f3f4f6';
+                else bg = cellType === 'attend' ? '#3b82f6' : '#f3f4f6';
+                cell.style.background = bg;
+                outer.appendChild(cell);
+            }
+        }
+        container.appendChild(outer);
+    }
+
+    function showMask(type) {
+        document.getElementById('causalBtn').classList.toggle('active', type === 'causal');
+        document.getElementById('docMaskBtn').classList.toggle('active', type === 'doc');
+        renderMask(type);
+        const cap = document.getElementById('maskCaption');
+        cap.textContent = type === 'causal'
+            ? 'Standard causal masking: every token can attend to all previous tokens in the sequence, including those from different packed documents. The highlighted row (query token in Doc B) reaches back into Doc A — spurious cross-document context.'
+            : 'Intra-document masking: each token can only attend to previous tokens within the same document. The highlighted row (query token in Doc B) is blocked from attending to Doc A entirely. The attention matrix becomes block-diagonal along document boundaries.';
+    }
+
+    showMask('causal');
+
+    // ── Context impact chart ──────────────────────────────────────────────────
+    Chart.defaults.font.family = 'Georgia, serif';
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#6b7280';
+
+    const BENCHMARKS = ['HellaSwag', 'ARC-E', 'PIQA', 'RULER (long ctx)'];
+    const SHORT_DATA = {
+        standard: [68.2, 63.1, 74.8, 52.0],
+        masked:   [68.4, 63.0, 75.6, 52.4],
+    };
+    const LONG_DATA = {
+        standard: [68.3, 63.2, 74.9, 41.2],
+        masked:   [68.5, 63.1, 75.7, 61.8],
+    };
+
+    const ctxCtx = document.getElementById('contextChart').getContext('2d');
+    let ctxChart = new Chart(ctxCtx, {
+        type: 'bar',
+        data: {
+            labels: BENCHMARKS,
+            datasets: [
+                {
+                    label: 'Standard masking',
+                    data: SHORT_DATA.standard,
+                    backgroundColor: '#9ca3afcc',
+                    borderColor: '#9ca3af',
+                    borderWidth: 1.5,
+                    borderRadius: 3,
+                },
+                {
+                    label: 'Document masking',
+                    data: SHORT_DATA.masked,
+                    backgroundColor: '#3b82f6cc',
+                    borderColor: '#3b82f6',
+                    borderWidth: 1.5,
+                    borderRadius: 3,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            animation: { duration: 400 },
+            plugins: {
+                legend: { display: true, position: 'top', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}` } }
+            },
+            scales: {
+                x: { grid: { display: false } },
+                y: {
+                    title: { display: true, text: 'Score (%)', color: '#9ca3af' },
+                    grid: { color: '#f3f4f6' },
+                    min: 35, max: 82
+                }
+            }
+        }
+    });
+
+    function showContextImpact(ctx) {
+        document.getElementById('shortCtxBtn').classList.toggle('active', ctx === 'short');
+        document.getElementById('longCtxBtn').classList.toggle('active', ctx === 'long');
+        const d = ctx === 'short' ? SHORT_DATA : LONG_DATA;
+        ctxChart.data.datasets[0].data = d.standard;
+        ctxChart.data.datasets[1].data = d.masked;
+        ctxChart.update();
+        const cap = document.getElementById('contextCaption');
+        cap.textContent = ctx === 'short'
+            ? 'At 4k context, standard masking and document masking produce nearly identical downstream scores. The gap on PIQA is small. RULER (long context) is not meaningfully tested at this sequence length.'
+            : 'At 64k context, the gap opens sharply on RULER — the long-context evaluation benchmark. Standard causal masking degrades significantly; document masking maintains performance by preventing cross-document noise from contaminating long-range representations.';
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    });
+    </script>
+</body>
+</html>

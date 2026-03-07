@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Small Models, Sharp Instincts - Douglas Seo</title>
+    <meta name="description" content="Before you can train big, you need to know how to read what your model is telling you. A guide to disciplined small-model training.">
+    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/public/css/base.css">
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
+    <link rel="stylesheet" href="/public/css/blog.css">
+    <style>
+        .viz-block {
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .viz-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin: 0 0 1rem 0;
+            font-family: Georgia, serif;
+        }
+        .viz-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .viz-btn {
+            padding: 0.3rem 0.75rem;
+            font-size: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            background: white;
+            cursor: pointer;
+            font-family: Georgia, serif;
+            color: #374151;
+            transition: all 0.15s;
+        }
+        .viz-btn.active {
+            background: #374151;
+            color: white;
+            border-color: #374151;
+        }
+        .viz-btn:hover:not(.active) {
+            background: #f3f4f6;
+        }
+        .viz-caption {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.75rem;
+            line-height: 1.5;
+            font-style: italic;
+        }
+        canvas {
+            max-height: 320px;
+        }
+        .article-source {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        .article-source a {
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="dotted-surface" id="dottedSurface"></div>
+        <div class="blog-layout">
+            <aside class="blog-side-nav"></aside>
+            <div class="blog-main">
+                <div class="article-container">
+            <a href="/blog/" class="back-link">← Table of Contents</a>
+
+            <div class="article-header">
+                <div class="chapter-label">Chapter 10</div>
+                <h1 class="article-title">Small Models, Sharp Instincts</h1>
+                <div class="article-meta">
+                    <time datetime="2026-03-06">March 6, 2026</time>
+                    <span>•</span>
+                    <span>12 min read</span>
+                </div>
+                <p class="article-source">Derived from and in dialogue with <a href="https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook" target="_blank" rel="noopener noreferrer">The Smol Training Playbook</a> by Hugging Face (Ben Allal, Tunstall, Tazi et al., 2025). This chapter is my own synthesis and interpretation.</p>
+            </div>
+
+            <div class="article-content">
+                <p class="lead">
+                    Everyone wants to train the big model. The instinct is understandable — larger models perform better, and performance is the point. But there is a discipline that precedes scale, and skipping it is how you end up running expensive jobs that teach you nothing. The discipline is starting small. Not because small is the goal, but because small is the only place where you can actually see what is happening.
+                </p>
+
+                <h2>Why Start Small</h2>
+
+                <p>
+                    A 60-million parameter model trained on a single GPU takes minutes per run. A 7-billion parameter model takes days on a cluster. This difference in wall-clock time is not just an inconvenience — it is a fundamental constraint on how much you can learn. The researcher who can run ten experiments today knows ten times more than the one waiting on a single job.
+                </p>
+
+                <p>
+                    The argument for starting small is really an argument about iteration density. Every training run is a hypothesis. You have a configuration — optimizer, learning rate, batch size, architecture — and you are asking whether it produces a model that learns. Small models let you run that hypothesis cheaply. The feedback loop is tight enough that you can develop genuine intuition: you begin to notice what healthy training feels like before it finishes, what warning signs look like in the first thousand steps, what a well-chosen learning rate does to the loss curve versus a poorly-chosen one.
+                </p>
+
+                <p>
+                    There is also something clarifying about constraint. A model that cannot learn a task at 60M parameters usually reveals the problem more clearly than one that partially learns it at 7B. Small models fail loudly. The instabilities, the dead gradients, the sensitivity to initialization — all of it shows up fast and visibly. At scale, these same problems hide behind longer training and larger parameter budgets. You spend more to learn less.
+                </p>
+
+                <p>
+                    HuggingFace's SmolLM2 family is worth studying as existence proof. Their 135M and 360M parameter models are competitive on standard benchmarks — HellaSwag, ARC, PIQA — against much larger models from earlier generations. They got there through careful data curation, architecture choices, and training recipe tuning that was almost certainly iterated at small scale first. The small model is not a practice target. It is the research vehicle.
+                </p>
+
+                <h2>The Optimizer Landscape</h2>
+
+                <p>
+                    Before your first run, you need to choose an optimizer. The choice matters more than people expect, and it interacts with everything else: your learning rate, your batch size, your weight decay, your warmup schedule. Getting this wrong does not necessarily cause obvious failure — it can just make your model quietly worse in ways you only discover when you compare against a better-configured baseline.
+                </p>
+
+                <p>
+                    <strong>AdamW</strong> is the correct starting point. It works by maintaining per-parameter adaptive learning rates — parameters that receive large gradients get smaller effective updates, and vice versa. The "W" distinguishes it from the original Adam: weight decay is applied directly to the weights rather than being folded into the gradient update, which matters for regularization. This is the optimizer on which most of what we know about transformer training has been established. When you read a paper and it says the model trained with AdamW, you know exactly what baseline they're working from. Start here.
+                </p>
+
+                <p>
+                    The standard hyperparameters are not arbitrary. A peak learning rate between 1e-3 and 3e-4 covers the range that works for most small transformer configurations — start at 3e-4 and adjust from there. Weight decay of 0.1 is the consensus value across recent language model work; it provides enough regularization without aggressively suppressing learning. Gradient clipping at 1.0 is close to universal for transformers because it prevents the occasional large gradient from destabilizing training.
+                </p>
+
+                <p>
+                    <strong>Muon</strong> is worth understanding as a challenger. It operates on the orthogonal complement of the weight update — rather than following the gradient directly, it finds the nearest orthogonal matrix update, enforcing a kind of geometric constraint on how weights change. In recent experiments on transformer pre-training, Muon has shown lower validation loss at equivalent compute compared to AdamW, particularly in the embedding layers. It is not yet established enough to be the default, but if you are doing serious ablation work, it belongs in the comparison.
+                </p>
+
+                <p>
+                    The learning rate schedule is as important as the optimizer. <strong>Cosine decay with linear warmup</strong> is the standard for a reason. During warmup — typically 1-5% of total training steps — the learning rate increases linearly from near zero to its peak value. This gives the model time to orient its parameters before large updates begin; starting at full learning rate from random initialization can cause early instability that propagates through the entire run. After warmup, cosine decay brings the learning rate smoothly to near zero by the end of training. Linear decay and constant learning rate both leave performance on the table.
+                </p>
+
+                <h2>The Batch Size Equation</h2>
+
+                <p>
+                    Batch size and learning rate are not independent knobs. They are coupled — changing one without adjusting the other is a common source of silent performance degradation that shows up in your loss curve as a vague underperformance with no obvious failure mode.
+                </p>
+
+                <p>
+                    The right unit for thinking about batch size in language model training is not samples — it is <strong>tokens per update</strong>. Your global token batch size is the product of the number of GPUs, gradient accumulation steps, micro-batch size per GPU, and sequence length. At the SmolLM ablation baseline (8 GPUs, 16 accumulation steps, micro-batch 3, sequence length 4096), that works out to 1.5 million tokens per gradient update. SmolLM3's final 3B training used 2.3 million tokens per batch.
+                </p>
+
+                <p>
+                    The coupling to learning rate follows an empirical rule: <strong>larger batches warrant lower peak learning rates</strong>. The intuition is about gradient noise. A small batch produces a noisier gradient estimate of the true loss surface — there is more variance between batches. A noisy gradient can still move you in the right direction on average, but it needs to be taken carefully; a large step in the wrong direction is worse than a small step in the right one. A large batch produces a cleaner, lower-variance gradient estimate, which means each update is more trustworthy and you can afford to step more aggressively — but you take fewer steps per token seen, so you typically reduce LR to compensate and ensure stable convergence.
+                </p>
+
+                <p>
+                    The playbook data bears this out concretely. DeepSeek LLM 7B trains with a 9.4M token batch at LR 4.2×10⁻⁴. SmolLM3 3B trains with a 2.3M token batch at LR 2×10⁻⁴. OLMo 2 7B uses a 4.2M token batch at LR 3×10⁻⁴. Smaller batch, higher LR — consistently, across labs and architectures.
+                </p>
+
+                <p>
+                    The practical implication: when you halve your batch size (because you have fewer GPUs, or because you want faster iteration), scale your learning rate up, not down. A common starting point is the square-root scaling rule: halve the batch → multiply LR by √2. Linear scaling (halve batch → double LR) is theoretically motivated but often too aggressive in practice and leads to instability early in training. The right scaling factor is itself something to ablate — but the direction is always the same.
+                </p>
+
+                <p>
+                    One more thing the token batch size makes visible: sequence length is part of the equation. If you reduce your context length from 4096 to 2048 for a quick experiment, you have effectively halved your batch size in tokens, even if your micro-batch and accumulation settings are unchanged. Your LR may need to be adjusted accordingly, or your results from short-context experiments may not transfer cleanly to the full-context run.
+                </p>
+
+                <h2>Reading the Training Charts</h2>
+
+                <p>
+                    Training a model without monitoring it is navigation without instruments. The charts are not administrative overhead — they are the primary feedback mechanism. Knowing what to look for in them is the core skill of training at any scale. The following visualizations show the three signals that matter most.
+                </p>
+
+                <p><strong>Loss curve.</strong> The training loss is the most fundamental signal. A healthy loss curve decays smoothly and consistently, with small random noise around the trend. Deviations from this pattern carry specific meaning.</p>
+
+                <!-- Visualization 1: Loss Curve -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 1 — Training Loss Curve</p>
+                    <div class="viz-controls">
+                        <button class="viz-btn active" id="lossHealthyBtn" onclick="showLossCurve('healthy')">Healthy convergence</button>
+                        <button class="viz-btn" id="lossSpikeBtn" onclick="showLossCurve('spikes')">Loss spikes</button>
+                        <button class="viz-btn" id="lossDivergeBtn" onclick="showLossCurve('diverge')">Divergence</button>
+                        <button class="viz-btn" id="lossPlateauBtn" onclick="showLossCurve('plateau')">Plateau</button>
+                    </div>
+                    <canvas id="lossChart"></canvas>
+                    <p class="viz-caption" id="lossCaption">Healthy: loss decays smoothly with minor noise. The curve is convex early, flattening as the model approaches convergence. Gradient noise is expected but bounded.</p>
+                </div>
+
+                <p>
+                    A loss spike — a sudden upward jump followed by recovery — usually indicates a bad batch, a numerically unstable operation, or a learning rate that is slightly too high. One spike can be ignored. Recurring spikes at regular intervals suggest a systematic data problem. Spikes that don't recover mean your learning rate is too large and training is on the edge of instability.
+                </p>
+
+                <p>
+                    A plateau means the model has stopped learning. This can happen when the learning rate decays too aggressively too early, when the dataset has been effectively exhausted, or when a bottleneck in the architecture is preventing further improvement. A plateau late in training is often expected; one that appears in the first 20% of the run is a problem worth diagnosing before continuing.
+                </p>
+
+                <p><strong>Gradient norm.</strong> The magnitude of your gradients tells you how aggressively the model is trying to update its weights at each step. Too large, and you risk instability; too small, and learning has effectively stopped.</p>
+
+                <!-- Visualization 2: Gradient Norm -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 2 — Gradient Norm Over Training</p>
+                    <div class="viz-controls">
+                        <button class="viz-btn active" id="gradHealthyBtn" onclick="showGradNorm('healthy')">Healthy</button>
+                        <button class="viz-btn" id="gradExplodeBtn" onclick="showGradNorm('explode')">Explosion</button>
+                        <button class="viz-btn" id="gradCollapseBtn" onclick="showGradNorm('collapse')">Collapse</button>
+                    </div>
+                    <canvas id="gradChart"></canvas>
+                    <p class="viz-caption" id="gradCaption">Healthy: gradient norm is high early as the model makes large adjustments from random initialization, then stabilizes to a bounded range. The clipping threshold (dashed line at 1.0) is rarely triggered.</p>
+                </div>
+
+                <p>
+                    Gradient explosion — the norm suddenly jumping to 10× or 100× its normal value — means something has gone very wrong numerically. This is precisely what gradient clipping is designed to catch; if your clipping threshold is being triggered on nearly every step, that is a sign the learning rate is too high or the model architecture has a stability problem. Gradient collapse — norm dropping to near zero — means gradients are not propagating through the network. Common causes include dead ReLU units, improper initialization, or too-aggressive weight decay.
+                </p>
+
+                <p><strong>Ablation comparison.</strong> Once you have a stable baseline, the ablation is the instrument for understanding which choices actually matter. The chart below shows what a structured comparison looks like: one variable changed at a time, all else held constant, evaluated against final validation loss.</p>
+
+                <!-- Visualization 3: Ablation Comparison -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 3 — Ablation Comparison (Final Validation Loss)</p>
+                    <div class="viz-controls">
+                        <button class="viz-btn active" id="ablationDefaultBtn" onclick="showAblation('default')">By config</button>
+                        <button class="viz-btn" id="ablationSortedBtn" onclick="showAblation('sorted')">Best to worst</button>
+                    </div>
+                    <canvas id="ablationChart"></canvas>
+                    <p class="viz-caption">Each bar represents a single training run with one variable changed from the baseline. Lower validation loss is better. The difference between best and worst config here is 0.4 nats — a meaningful gap at this scale.</p>
+                </div>
+
+                <p>
+                    The goal of the ablation chart is not to find the single best configuration. It is to understand the sensitivity of your training to each variable. A configuration that produces 0.3 nats better loss than the baseline is a meaningful finding. A configuration that produces 0.01 nats better loss is probably within noise. Knowing which levers matter — and how much — is the knowledge that transfers to scale.
+                </p>
+
+                <h2>The Ablation Mindset</h2>
+
+                <p>
+                    Ablation is not a technique. It is an epistemic discipline. The rule is simple: change one thing at a time. If you change the optimizer and the learning rate simultaneously, and performance improves, you do not know why. You have learned that the combination is better, which is weaker knowledge than understanding which component drove the improvement. Compound changes produce compound ignorance.
+                </p>
+
+                <p>
+                    The order in which you ablate matters. Start with the variables that have the largest expected effect on training stability: learning rate first, then warmup duration, then batch size, then optimizer choice. Architecture decisions — attention mechanism variants, positional encoding schemes, normalization placement — come after you have a stable training recipe, because architectural changes interact with all of the above. If you ablate architecture against an unstable baseline, your results will not generalize.
+                </p>
+
+                <p>
+                    Every run needs a name, a config file, and at minimum these three tracked metrics: training loss, validation loss, and gradient norm. The name should describe the hypothesis being tested, not be a timestamp or an arbitrary identifier. Six months from now, a run called <em>muon-lr3e4-cosine-60m</em> is legible; a run called <em>run_47</em> is archaeology. Log everything; delete nothing.
+                </p>
+
+                <p>
+                    "SOTA small" is a specific target, not a vague aspiration. For a sub-1B parameter language model, competitive means scoring above 70 on HellaSwag, above 50 on ARC-Challenge, and above 75 on PIQA with 0-shot evaluation. These thresholds have moved over the last two years as training recipes have improved, but they are achievable at 135M–360M parameters if the data, optimizer, and schedule are well-chosen. The architecture matters less than people think at this scale; the recipe matters more.
+                </p>
+
+                <h2>The Roadmap</h2>
+
+                <p>
+                    What I am building toward is not a single model. It is a research loop — a structured process for understanding what actually works in small transformer training, which I can then apply to increasingly capable architectures.
+                </p>
+
+                <p>
+                    The first stage is a clean baseline: a GPT-2-style or LLaMA-style decoder-only transformer at 60M–300M parameters, trained on FineWeb or a similar high-quality web corpus, with the standard recipe established above. The goal is a model that trains stably, hits competitive benchmarks, and serves as the control for every subsequent experiment. No tricks, no novel components — just a solid, well-understood foundation.
+                </p>
+
+                <p>
+                    The second stage is custom YAT — Yet Another Transformer — implementations. Not using someone else's RoPE, someone else's SwiGLU, someone else's normalization placement. Writing these from scratch matters because it forces a level of understanding that reading papers does not. When you implement rotary position embeddings and watch how they affect the attention patterns, you understand something about positional encoding that you cannot get from a formula. Each component gets ablated against the baseline at small scale before it touches a larger model.
+                </p>
+
+                <p>
+                    The third stage is MTEB fine-tuning. MTEB — the Massive Text Embedding Benchmark — evaluates embedding models across retrieval, classification, clustering, and reranking tasks. Fine-tuning a pre-trained decoder model into a strong embedding model requires specific training objectives (contrastive learning, instruction-following for asymmetric retrieval) that are worth understanding deeply. The small pre-trained model becomes the starting point; the fine-tuning process is itself an ablation surface.
+                </p>
+
+                <p>
+                    This is the same spirit as Chapter 5 — building in public, learning in public — but applied to research rather than product. The experiments will be logged and the findings will be written up. The dead ends are as informative as the successes.
+                </p>
+
+                <h2>What Small Teaches</h2>
+
+                <p>
+                    A model that cannot generalize at 60M parameters will not magically generalize at 7B. The failure mode is the same; only the cost has increased. If your loss curve is spiky at small scale, it will be spiky at large scale — you will just spend more compute discovering this. If your architecture choice does not improve over baseline at 60M, it probably does not improve at 300M either.
+                </p>
+
+                <p>
+                    The discipline of reading small trains the instinct for reading big. When you have watched a hundred loss curves at small scale, you recognize the patterns immediately at any scale. The gradient norm explosion you saw at step 200 of a 60M-parameter run is the same explosion you will see at step 2000 of a 7B-parameter run — just more expensive to recover from.
+                </p>
+
+                <p>
+                    The previous chapter proposed that training might be understood as measuring the curvature of a learned geometry — that weights are not arbitrary numbers but the shape of the space the model has learned to inhabit. If that framing is right, then starting small is not a compromise. It is the appropriate instrument. Small models produce cleaner geometry. The signal is less noisy. The training charts are a direct readout of how the curvature is forming, where it is healthy, where it is distorted. The instincts you develop by reading them carefully are not small-model instincts. They are instincts about learning itself.
+                </p>
+
+                <nav class="chapter-navigation">
+                    <a href="/blog/the-gravity-of-learning.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Previous chapter</span>
+                        <span>← Chapter 9: The Gravity of Learning</span>
+                    </a>
+                    <a href="/blog/packing-masking-sequences.html" class="chapter-nav-link chapter-nav-next">
+                        <span class="chapter-nav-label">Next chapter</span>
+                        <span>Chapter 11: The Tokens You Don't See →</span>
+                    </a>
+                </nav>
+            </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="social-links">
+                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
+                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
+                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
+            </div>
+            <p>&copy; 2026 Douglas Seo. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/public/js/blog-nav.js"></script>
+    <script src="/public/js/dotted-surface.js"></script>
+    <script>
+        // ── Shared chart defaults ──────────────────────────────────────────────
+        Chart.defaults.font.family = 'Georgia, serif';
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#6b7280';
+
+        const STEPS = Array.from({ length: 50 }, (_, i) => i * 100);
+        const BLUE = '#3b82f6';
+        const GRAY = '#9ca3af';
+        const RED = '#ef4444';
+        const AMBER = '#f59e0b';
+
+        function seededNoise(seed, scale = 1) {
+            // Simple deterministic pseudo-noise for reproducible chart data
+            return STEPS.map((_, i) => {
+                const x = Math.sin(seed * 9301 + i * 49297) * 0.5;
+                return (x - Math.floor(x) - 0.5) * scale;
+            });
+        }
+
+        // ── Loss Chart ────────────────────────────────────────────────────────
+        const lossCtx = document.getElementById('lossChart').getContext('2d');
+        let lossChart = new Chart(lossCtx, {
+            type: 'line',
+            data: { labels: STEPS, datasets: [] },
+            options: {
+                responsive: true,
+                animation: { duration: 400 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `loss: ${ctx.parsed.y.toFixed(3)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Training steps', color: '#9ca3af' },
+                        grid: { color: '#f3f4f6' },
+                        ticks: { maxTicksLimit: 8 }
+                    },
+                    y: {
+                        title: { display: true, text: 'Cross-entropy loss', color: '#9ca3af' },
+                        grid: { color: '#f3f4f6' },
+                        min: 1.5,
+                        max: 6.5
+                    }
+                }
+            }
+        });
+
+        function makeLossData(type) {
+            const noise = seededNoise(42, 0.06);
+            switch (type) {
+                case 'healthy': {
+                    return STEPS.map((s, i) => {
+                        const base = 5.8 * Math.exp(-i / 18) + 2.1;
+                        return parseFloat((base + noise[i]).toFixed(4));
+                    });
+                }
+                case 'spikes': {
+                    return STEPS.map((s, i) => {
+                        const base = 5.8 * Math.exp(-i / 18) + 2.1;
+                        const spike = ([8, 22, 37].includes(i)) ? 1.8 : 0;
+                        return parseFloat((base + noise[i] * 1.5 + spike).toFixed(4));
+                    });
+                }
+                case 'diverge': {
+                    return STEPS.map((s, i) => {
+                        if (i < 20) return parseFloat((5.8 * Math.exp(-i / 18) + 2.1 + noise[i]).toFixed(4));
+                        return parseFloat((2.5 + (i - 20) * 0.12 + noise[i] * 0.8).toFixed(4));
+                    });
+                }
+                case 'plateau': {
+                    return STEPS.map((s, i) => {
+                        const base = i < 15
+                            ? 5.8 * Math.exp(-i / 5) + 3.2
+                            : 3.35;
+                        return parseFloat((base + noise[i] * 0.5).toFixed(4));
+                    });
+                }
+            }
+        }
+
+        const lossCaptions = {
+            healthy: 'Healthy: loss decays smoothly with minor noise. The curve is convex early, flattening as the model approaches convergence. Gradient noise is expected but bounded.',
+            spikes: 'Loss spikes: sudden upward jumps at steps 800, 2200, and 3700. Recurring spikes suggest an elevated learning rate or problematic batches in the data pipeline.',
+            diverge: 'Divergence: loss initially improves, then begins increasing after step 2000. The model has become unstable — likely the learning rate is too high or weight decay too low.',
+            plateau: 'Plateau: loss drops rapidly then stalls above 3.3. The model stopped learning after the first 1500 steps. Common causes: LR decayed too fast, insufficient data diversity, or an architecture bottleneck.'
+        };
+
+        function showLossCurve(type) {
+            document.querySelectorAll('#lossHealthyBtn, #lossSpikeBtn, #lossDivergeBtn, #lossPlateauBtn')
+                .forEach(b => b.classList.remove('active'));
+            document.getElementById({
+                healthy: 'lossHealthyBtn', spikes: 'lossSpikeBtn',
+                diverge: 'lossDivergeBtn', plateau: 'lossPlateauBtn'
+            }[type]).classList.add('active');
+
+            lossChart.data.datasets = [{
+                data: makeLossData(type),
+                borderColor: type === 'healthy' ? BLUE : RED,
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.3,
+                fill: false
+            }];
+            lossChart.update();
+            document.getElementById('lossCaption').textContent = lossCaptions[type];
+        }
+
+        showLossCurve('healthy');
+
+        // ── Gradient Norm Chart ───────────────────────────────────────────────
+        const gradCtx = document.getElementById('gradChart').getContext('2d');
+        let gradChart = new Chart(gradCtx, {
+            type: 'line',
+            data: { labels: STEPS, datasets: [] },
+            options: {
+                responsive: true,
+                animation: { duration: 400 },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { boxWidth: 12, padding: 12, font: { size: 11 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Training steps', color: '#9ca3af' },
+                        grid: { color: '#f3f4f6' },
+                        ticks: { maxTicksLimit: 8 }
+                    },
+                    y: {
+                        title: { display: true, text: 'Gradient norm', color: '#9ca3af' },
+                        grid: { color: '#f3f4f6' },
+                        min: 0
+                    }
+                }
+            }
+        });
+
+        function makeGradData(type) {
+            const noise = seededNoise(7, 0.04);
+            switch (type) {
+                case 'healthy':
+                    return STEPS.map((_, i) => parseFloat((0.9 * Math.exp(-i / 25) + 0.35 + Math.abs(noise[i])).toFixed(4)));
+                case 'explode':
+                    return STEPS.map((_, i) => {
+                        if (i === 28) return 12.4;
+                        if (i === 29) return 8.1;
+                        return parseFloat((0.9 * Math.exp(-i / 25) + 0.35 + Math.abs(noise[i]) * 2).toFixed(4));
+                    });
+                case 'collapse':
+                    return STEPS.map((_, i) => {
+                        if (i < 10) return parseFloat((0.9 * Math.exp(-i / 4) + 0.4 + Math.abs(noise[i])).toFixed(4));
+                        return parseFloat((Math.max(0.02, 0.06 * Math.exp(-(i - 10) / 8)) + Math.abs(noise[i]) * 0.05).toFixed(4));
+                    });
+            }
+        }
+
+        const gradCaptions = {
+            healthy: 'Healthy: gradient norm is high early as the model makes large adjustments from random initialization, then stabilizes to a bounded range. The clipping threshold (dashed line at 1.0) is rarely triggered.',
+            explode: 'Explosion: at step 2800 the gradient norm spikes to 12.4 — 20× its normal value. Gradient clipping catches it (capped at 1.0) but the event signals instability. Check for bad data batches or reduce the learning rate.',
+            collapse: 'Collapse: after step 1000 the gradient norm drops toward zero. The model has stopped learning. Possible causes: dead activation units, weight decay too high, or a vanishing gradient pathology in the architecture.'
+        };
+
+        function showGradNorm(type) {
+            document.querySelectorAll('#gradHealthyBtn, #gradExplodeBtn, #gradCollapseBtn')
+                .forEach(b => b.classList.remove('active'));
+            document.getElementById({
+                healthy: 'gradHealthyBtn', explode: 'gradExplodeBtn', collapse: 'gradCollapseBtn'
+            }[type]).classList.add('active');
+
+            const maxY = type === 'explode' ? 14 : type === 'healthy' ? 2 : 2;
+            gradChart.options.scales.y.max = maxY;
+
+            gradChart.data.datasets = [
+                {
+                    label: 'Grad norm',
+                    data: makeGradData(type),
+                    borderColor: type === 'healthy' ? BLUE : type === 'explode' ? RED : AMBER,
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.2,
+                    fill: false
+                },
+                {
+                    label: 'Clip threshold (1.0)',
+                    data: STEPS.map(() => 1.0),
+                    borderColor: '#d1d5db',
+                    borderDash: [6, 4],
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    fill: false
+                }
+            ];
+            gradChart.update();
+            document.getElementById('gradCaption').textContent = gradCaptions[type];
+        }
+
+        showGradNorm('healthy');
+
+        // ── Ablation Chart ────────────────────────────────────────────────────
+        const ablationCtx = document.getElementById('ablationChart').getContext('2d');
+
+        const ablationConfigs = [
+            { label: 'Baseline (AdamW, lr=3e-4, wd=0.1)', loss: 2.41, color: BLUE },
+            { label: 'Muon optimizer', loss: 2.28, color: '#10b981' },
+            { label: 'No warmup', loss: 2.67, color: AMBER },
+            { label: 'LR too high (1e-2)', loss: 3.12, color: RED },
+            { label: 'Weight decay = 0', loss: 2.59, color: '#8b5cf6' },
+        ];
+
+        let ablationChart = new Chart(ablationCtx, {
+            type: 'bar',
+            data: {
+                labels: ablationConfigs.map(c => c.label),
+                datasets: [{
+                    data: ablationConfigs.map(c => c.loss),
+                    backgroundColor: ablationConfigs.map(c => c.color + 'cc'),
+                    borderColor: ablationConfigs.map(c => c.color),
+                    borderWidth: 1.5,
+                    borderRadius: 3
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                animation: { duration: 400 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `val loss: ${ctx.parsed.x.toFixed(2)}`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Validation loss (lower is better)', color: '#9ca3af' },
+                        grid: { color: '#f3f4f6' },
+                        min: 2.0,
+                        max: 3.4
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    }
+                }
+            }
+        });
+
+        function showAblation(mode) {
+            document.querySelectorAll('#ablationDefaultBtn, #ablationSortedBtn')
+                .forEach(b => b.classList.remove('active'));
+            document.getElementById(mode === 'default' ? 'ablationDefaultBtn' : 'ablationSortedBtn').classList.add('active');
+
+            const configs = mode === 'sorted'
+                ? [...ablationConfigs].sort((a, b) => a.loss - b.loss)
+                : ablationConfigs;
+
+            ablationChart.data.labels = configs.map(c => c.label);
+            ablationChart.data.datasets[0].data = configs.map(c => c.loss);
+            ablationChart.data.datasets[0].backgroundColor = configs.map(c => c.color + 'cc');
+            ablationChart.data.datasets[0].borderColor = configs.map(c => c.color);
+            ablationChart.update();
+        }
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

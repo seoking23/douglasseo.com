@@ -17,22 +17,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html" class="side-nav-active">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -90,6 +75,208 @@
                     <li>Collaborative features designed for research teams</li>
                     <li>Optimized performance for large-scale computations</li>
                 </ul>
+
+                <div class="viz-block" id="bashnota-viz">
+                    <div class="viz-title">BashNota Research Pipeline</div>
+                    <svg id="pipeline-svg" viewBox="0 0 560 80" style="width:100%;height:auto;overflow:visible;" aria-label="BashNota research pipeline"></svg>
+                    <div style="height:16px;"></div>
+                    <div class="viz-title" style="margin-top:8px;">YAT — Dot Product with Gravity</div>
+                    <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:8px;">
+                        <canvas id="yat-canvas" width="480" height="130" style="width:min(480px,100%);height:auto;border-radius:4px;"></canvas>
+                    </div>
+                    <div class="viz-caption">Above: the BashNota research loop — raw data flows through configurable experiments to live insights. Below: YAT replaces flat dot product similarity with geometry-aware attention, weighting relationships by the curvature of learned space.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var NS = 'http://www.w3.org/2000/svg';
+                    var psvg = document.getElementById('pipeline-svg');
+                    var started = false;
+
+                    var stages = [
+                        { label: 'Raw Data', icon: '⬡', x: 50 },
+                        { label: 'Experiment\nConfig', icon: '⚙', x: 165 },
+                        { label: 'BashNota\nCompute', icon: '◈', x: 280, highlight: true },
+                        { label: 'Live\nVisualization', icon: '◉', x: 395 },
+                        { label: 'Insight', icon: '✦', x: 510 }
+                    ];
+                    var CY = 40;
+
+                    for (var i = 0; i < stages.length - 1; i++) {
+                        var s = stages[i], n = stages[i+1];
+                        var path = document.createElementNS(NS, 'line');
+                        path.setAttribute('x1', s.x + 22); path.setAttribute('y1', CY);
+                        path.setAttribute('x2', n.x - 22); path.setAttribute('y2', CY);
+                        path.setAttribute('stroke', '#d1d5db');
+                        path.setAttribute('stroke-width', '1.5');
+                        path.setAttribute('stroke-dasharray', '4 4');
+                        psvg.appendChild(path);
+
+                        var dot = document.createElementNS(NS, 'circle');
+                        dot.setAttribute('r', '3');
+                        dot.setAttribute('fill', '#3b82f6');
+                        var anim = document.createElementNS(NS, 'animateMotion');
+                        anim.setAttribute('dur', (1.2 + i * 0.3) + 's');
+                        anim.setAttribute('repeatCount', 'indefinite');
+                        anim.setAttribute('begin', (i * 0.5) + 's');
+                        anim.setAttribute('path', 'M' + (s.x+22) + ',' + CY + ' L' + (n.x-22) + ',' + CY);
+                        dot.appendChild(anim);
+                        psvg.appendChild(dot);
+                    }
+
+                    stages.forEach(function(s) {
+                        var isHL = s.highlight;
+                        if (isHL) {
+                            var glow = document.createElementNS(NS, 'circle');
+                            glow.setAttribute('cx', s.x); glow.setAttribute('cy', CY); glow.setAttribute('r', '28');
+                            glow.setAttribute('fill', 'rgba(59,130,246,0.08)');
+                            psvg.appendChild(glow);
+                        }
+                        var circle = document.createElementNS(NS, 'circle');
+                        circle.setAttribute('cx', s.x); circle.setAttribute('cy', CY); circle.setAttribute('r', '20');
+                        circle.setAttribute('fill', isHL ? 'rgba(59,130,246,0.08)' : '#f3f4f6');
+                        circle.setAttribute('stroke', isHL ? '#3b82f6' : '#d1d5db');
+                        circle.setAttribute('stroke-width', isHL ? '2' : '1');
+                        psvg.appendChild(circle);
+                        var icon = document.createElementNS(NS, 'text');
+                        icon.setAttribute('x', s.x); icon.setAttribute('y', CY + 5);
+                        icon.setAttribute('text-anchor', 'middle'); icon.setAttribute('font-size', '14');
+                        icon.setAttribute('fill', isHL ? '#3b82f6' : '#6b7280');
+                        icon.textContent = s.icon;
+                        psvg.appendChild(icon);
+                        var lines = s.label.split('\n');
+                        lines.forEach(function(line, li) {
+                            var lt = document.createElementNS(NS, 'text');
+                            lt.setAttribute('x', s.x);
+                            lt.setAttribute('y', CY + 32 + li * 12);
+                            lt.setAttribute('text-anchor', 'middle'); lt.setAttribute('font-size', '9');
+                            lt.setAttribute('fill', isHL ? '#2563eb' : '#9ca3af');
+                            lt.textContent = line;
+                            psvg.appendChild(lt);
+                        });
+                    });
+
+                    // ─── YAT canvas ───
+                    var yc = document.getElementById('yat-canvas');
+                    var yctx = yc.getContext('2d');
+                    var W = 480, H = 130;
+
+                    function drawYAT(t) {
+                        yctx.clearRect(0, 0, W, H);
+                        var halfW = W / 2;
+
+                        yctx.strokeStyle = '#e5e7eb';
+                        yctx.lineWidth = 1;
+                        yctx.setLineDash([4, 4]);
+                        yctx.beginPath(); yctx.moveTo(halfW, 10); yctx.lineTo(halfW, H - 10); yctx.stroke();
+                        yctx.setLineDash([]);
+
+                        yctx.font = 'bold 10px sans-serif'; yctx.textAlign = 'center';
+                        yctx.fillStyle = '#6b7280';
+                        yctx.fillText('Standard Dot Product', halfW * 0.5, 14);
+                        yctx.fillStyle = '#2563eb';
+                        yctx.fillText('YAT — with Gravity', halfW * 1.5, 14);
+
+                        var lCX = halfW * 0.5, lCY = H * 0.55;
+                        var v1Angle = -0.6, v2Angle = 0.6;
+                        var vLen = 48;
+                        var v1x = lCX + Math.cos(v1Angle) * vLen, v1y = lCY + Math.sin(v1Angle) * vLen;
+                        var v2x = lCX + Math.cos(v2Angle) * vLen, v2y = lCY + Math.sin(v2Angle) * vLen;
+
+                        yctx.strokeStyle = '#b45309'; yctx.lineWidth = 2;
+                        yctx.beginPath(); yctx.moveTo(lCX, lCY); yctx.lineTo(v1x, v1y); yctx.stroke();
+                        yctx.beginPath(); yctx.moveTo(lCX, lCY); yctx.lineTo(v2x, v2y); yctx.stroke();
+
+                        yctx.fillStyle = '#92400e';
+                        yctx.font = 'bold 10px sans-serif'; yctx.textAlign = 'center';
+                        yctx.fillText('A', v1x, v1y - 6);
+                        yctx.fillText('B', v2x, v2y - 6);
+
+                        yctx.fillStyle = '#9ca3af'; yctx.font = '9px sans-serif';
+                        yctx.fillText('A · B = scalar', lCX, H - 14);
+
+                        yctx.beginPath(); yctx.arc(lCX, lCY, 4, 0, Math.PI*2);
+                        yctx.fillStyle = '#b45309'; yctx.fill();
+
+                        var rCX = halfW + halfW * 0.5, rCY = H * 0.52;
+                        var gravX = rCX + 20, gravY = rCY - 10;
+
+                        var gCols = 10, gRows = 6, gW = halfW * 0.85, gH = H * 0.65;
+                        var gLeft = halfW + halfW * 0.075, gTop = 18;
+                        for (var gr = 0; gr <= gRows; gr++) {
+                            yctx.beginPath();
+                            for (var gc = 0; gc <= gCols; gc++) {
+                                var px = gLeft + gc * (gW/gCols);
+                                var py = gTop + gr * (gH/gRows);
+                                var ex = gravX - px, ey = gravY - py;
+                                var d2 = Math.max(ex*ex + ey*ey, 600);
+                                var f = Math.min(1800 / d2, 20);
+                                var wx = px + ex/Math.sqrt(d2)*f;
+                                var wy = py + ey/Math.sqrt(d2)*f;
+                                if (gc === 0) yctx.moveTo(wx, wy); else yctx.lineTo(wx, wy);
+                            }
+                            yctx.strokeStyle = 'rgba(59,130,246,0.18)'; yctx.lineWidth = 0.8; yctx.stroke();
+                        }
+                        for (var gc = 0; gc <= gCols; gc++) {
+                            yctx.beginPath();
+                            for (var gr = 0; gr <= gRows; gr++) {
+                                var px = gLeft + gc * (gW/gCols);
+                                var py = gTop + gr * (gH/gRows);
+                                var ex = gravX - px, ey = gravY - py;
+                                var d2 = Math.max(ex*ex + ey*ey, 600);
+                                var f = Math.min(1800 / d2, 20);
+                                var wx = px + ex/Math.sqrt(d2)*f;
+                                var wy = py + ey/Math.sqrt(d2)*f;
+                                if (gr === 0) yctx.moveTo(wx, wy); else yctx.lineTo(wx, wy);
+                            }
+                            yctx.strokeStyle = 'rgba(59,130,246,0.18)'; yctx.lineWidth = 0.8; yctx.stroke();
+                        }
+
+                        var grd = yctx.createRadialGradient(gravX, gravY, 0, gravX, gravY, 18);
+                        grd.addColorStop(0, 'rgba(245,158,11,0.35)');
+                        grd.addColorStop(1, 'rgba(245,158,11,0)');
+                        yctx.beginPath(); yctx.arc(gravX, gravY, 18, 0, Math.PI*2);
+                        yctx.fillStyle = grd; yctx.fill();
+                        yctx.beginPath(); yctx.arc(gravX, gravY, 5, 0, Math.PI*2);
+                        yctx.fillStyle = '#f59e0b'; yctx.fill();
+
+                        var a1 = -0.6 + Math.sin(t * 0.4) * 0.15;
+                        var a2 = 0.6 + Math.cos(t * 0.3) * 0.1;
+                        var rv1x = rCX + Math.cos(a1)*vLen, rv1y = rCY + Math.sin(a1)*vLen;
+                        var rv2x = rCX + Math.cos(a2)*vLen, rv2y = rCY + Math.sin(a2)*vLen;
+
+                        yctx.strokeStyle = '#3b82f6'; yctx.lineWidth = 2;
+                        yctx.beginPath(); yctx.moveTo(rCX, rCY); yctx.lineTo(rv1x, rv1y); yctx.stroke();
+                        yctx.beginPath(); yctx.moveTo(rCX, rCY); yctx.lineTo(rv2x, rv2y); yctx.stroke();
+                        yctx.fillStyle = '#1d4ed8'; yctx.font = 'bold 10px sans-serif'; yctx.textAlign = 'center';
+                        yctx.fillText('A', rv1x, rv1y - 6);
+                        yctx.fillText('B', rv2x, rv2y - 6);
+
+                        yctx.fillStyle = '#3b82f6'; yctx.font = '9px sans-serif';
+                        yctx.fillText('A ·\u1D4D B = geometry-weighted', rCX, H - 14);
+
+                        yctx.beginPath(); yctx.arc(rCX, rCY, 4, 0, Math.PI*2);
+                        yctx.fillStyle = '#3b82f6'; yctx.fill();
+                    }
+
+                    var t = 0;
+                    function animYAT() {
+                        t += 0.04;
+                        drawYAT(t);
+                        requestAnimationFrame(animYAT);
+                    }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) {
+                            if (e.isIntersecting && !started) {
+                                started = true;
+                                animYAT();
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                    observer.observe(document.getElementById('bashnota-viz'));
+                })();
+                </script>
 
                 <h2>My Role in the Journey</h2>
 
@@ -200,6 +387,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         // Smooth scrolling for anchor links

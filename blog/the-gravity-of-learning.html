@@ -17,22 +17,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html" class="side-nav-active">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -116,6 +101,207 @@
                     What we haven't done is formalize this. We haven't asked: what are the units of mass in a learning system? What is the equivalent of distance? What is the nature of the curvature, and can we calculate it directly rather than discovering it empirically through training runs and loss curves? Physics has tools for this — differential geometry, tensor calculus, field theory. They have not been seriously applied to the structure of learning, at least not in the ways the field has organized itself.
                 </p>
 
+                <div class="viz-block" id="gravity-viz">
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+                        <div class="viz-title">Data as Mass — Learned Geometry</div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span style="font-size:0.65rem;color:var(--color-muted);">Click canvas to add · click point to remove</span>
+                            <button class="viz-btn" id="gravity-reset">Reset</button>
+                        </div>
+                    </div>
+                    <canvas id="gravity-canvas" style="width:100%;border-radius:4px;cursor:crosshair;"></canvas>
+                    <div class="viz-caption">Each data point (amber) warps the learned geometry. The blue ball follows gradient descent through curved space — the path of least resistance. Add or remove mass to reshape what the model learns.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var canvas = document.getElementById('gravity-canvas');
+                    var ctx = canvas.getContext('2d');
+                    var container = document.getElementById('gravity-viz');
+                    var COLS = 30, ROWS = 16;
+                    var DAMPING = 0.88;
+                    var MAX_WARP = 52;
+                    var MIN_DIST2 = 500;
+                    var W, H, cellW, cellH;
+                    var defaultNorm = [
+                        { nx: 0.25, ny: 0.40, mass: 17000 },
+                        { nx: 0.72, ny: 0.32, mass: 13000 },
+                        { nx: 0.50, ny: 0.70, mass: 15000 }
+                    ];
+                    var masses = [];
+                    var ball = { x: 0, y: 0, vx: 0, vy: 0 };
+                    var animId = null;
+                    var started = false;
+
+                    function resize() {
+                        W = Math.max(container.clientWidth - 52, 200);
+                        H = Math.round(W * 0.42);
+                        canvas.width = W;
+                        canvas.height = H;
+                        cellW = W / COLS;
+                        cellH = H / ROWS;
+                    }
+
+                    function resetViz() {
+                        masses = defaultNorm.map(function(m) {
+                            return { x: m.nx * W, y: m.ny * H, mass: m.mass };
+                        });
+                        ball = { x: W * 0.5, y: H * 0.12, vx: 0.5, vy: 0 };
+                    }
+
+                    function warpPoint(gx, gy) {
+                        var dx = 0, dy = 0;
+                        for (var i = 0; i < masses.length; i++) {
+                            var m = masses[i];
+                            var ex = m.x - gx, ey = m.y - gy;
+                            var d2 = ex * ex + ey * ey;
+                            if (d2 < MIN_DIST2) d2 = MIN_DIST2;
+                            var f = m.mass / d2;
+                            dx += ex * f; dy += ey * f;
+                        }
+                        var len = Math.sqrt(dx * dx + dy * dy);
+                        if (len > MAX_WARP) { dx = dx / len * MAX_WARP; dy = dy / len * MAX_WARP; }
+                        return { dx: dx, dy: dy };
+                    }
+
+                    function drawGrid() {
+                        ctx.strokeStyle = 'rgba(59,130,246,0.2)';
+                        ctx.lineWidth = 0.8;
+                        var r, c, gx, gy, w, px, py;
+                        for (r = 0; r <= ROWS; r++) {
+                            ctx.beginPath();
+                            for (c = 0; c <= COLS; c++) {
+                                gx = c * cellW; gy = r * cellH;
+                                w = warpPoint(gx, gy);
+                                px = gx + w.dx; py = gy + w.dy;
+                                if (c === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                            }
+                            ctx.stroke();
+                        }
+                        for (c = 0; c <= COLS; c++) {
+                            ctx.beginPath();
+                            for (r = 0; r <= ROWS; r++) {
+                                gx = c * cellW; gy = r * cellH;
+                                w = warpPoint(gx, gy);
+                                px = gx + w.dx; py = gy + w.dy;
+                                if (r === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                            }
+                            ctx.stroke();
+                        }
+                    }
+
+                    function drawMasses() {
+                        for (var i = 0; i < masses.length; i++) {
+                            var m = masses[i];
+                            var r = Math.max(4, Math.sqrt(m.mass / 900));
+                            var grd = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, r * 4);
+                            grd.addColorStop(0, 'rgba(245,158,11,0.35)');
+                            grd.addColorStop(1, 'rgba(245,158,11,0)');
+                            ctx.beginPath();
+                            ctx.arc(m.x, m.y, r * 4, 0, Math.PI * 2);
+                            ctx.fillStyle = grd;
+                            ctx.fill();
+                            ctx.beginPath();
+                            ctx.arc(m.x, m.y, r, 0, Math.PI * 2);
+                            ctx.fillStyle = '#f59e0b';
+                            ctx.fill();
+                        }
+                    }
+
+                    function drawBall() {
+                        var gr = ctx.createRadialGradient(ball.x, ball.y, 0, ball.x, ball.y, 18);
+                        gr.addColorStop(0, 'rgba(59,130,246,0.35)');
+                        gr.addColorStop(1, 'rgba(59,130,246,0)');
+                        ctx.beginPath();
+                        ctx.arc(ball.x, ball.y, 18, 0, Math.PI * 2);
+                        ctx.fillStyle = gr;
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(ball.x, ball.y, 5, 0, Math.PI * 2);
+                        ctx.fillStyle = '#3b82f6';
+                        ctx.fill();
+                    }
+
+                    function updateBall() {
+                        var ax = 0, ay = 0;
+                        for (var i = 0; i < masses.length; i++) {
+                            var m = masses[i];
+                            var ex = m.x - ball.x, ey = m.y - ball.y;
+                            var d2 = ex * ex + ey * ey;
+                            if (d2 < MIN_DIST2) d2 = MIN_DIST2;
+                            var d = Math.sqrt(d2);
+                            var f = (m.mass * 0.000065) / d2;
+                            ax += (ex / d) * f;
+                            ay += (ey / d) * f;
+                        }
+                        ball.vx = (ball.vx + ax) * DAMPING;
+                        ball.vy = (ball.vy + ay) * DAMPING;
+                        ball.x += ball.vx;
+                        ball.y += ball.vy;
+                        if (ball.x < 5) { ball.x = 5; ball.vx *= -0.4; }
+                        if (ball.x > W - 5) { ball.x = W - 5; ball.vx *= -0.4; }
+                        if (ball.y < 5) { ball.y = 5; ball.vy *= -0.4; }
+                        if (ball.y > H - 5) { ball.y = H - 5; ball.vy *= -0.4; }
+                    }
+
+                    function draw() {
+                        ctx.clearRect(0, 0, W, H);
+                        drawGrid();
+                        drawMasses();
+                        drawBall();
+                        updateBall();
+                        animId = requestAnimationFrame(draw);
+                    }
+
+                    canvas.addEventListener('click', function(e) {
+                        var rect = canvas.getBoundingClientRect();
+                        var sx = W / rect.width, sy = H / rect.height;
+                        var cx = (e.clientX - rect.left) * sx;
+                        var cy = (e.clientY - rect.top) * sy;
+                        var threshold = 20;
+                        var idx = -1;
+                        for (var i = 0; i < masses.length; i++) {
+                            var dx = masses[i].x - cx, dy = masses[i].y - cy;
+                            if (Math.sqrt(dx*dx + dy*dy) < threshold) { idx = i; break; }
+                        }
+                        if (idx >= 0) {
+                            masses.splice(idx, 1);
+                        } else {
+                            masses.push({ x: cx, y: cy, mass: 13000 + Math.random() * 6000 });
+                        }
+                    });
+
+                    document.getElementById('gravity-reset').addEventListener('click', function() {
+                        resize();
+                        resetViz();
+                    });
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(entry) {
+                            if (entry.isIntersecting && !started) {
+                                started = true;
+                                resize();
+                                resetViz();
+                                draw();
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                    observer.observe(document.getElementById('gravity-viz'));
+
+                    window.addEventListener('resize', function() {
+                        if (!started) return;
+                        var oldW = W, oldH = H;
+                        resize();
+                        for (var i = 0; i < masses.length; i++) {
+                            masses[i].x *= W / oldW;
+                            masses[i].y *= H / oldH;
+                        }
+                        ball.x *= W / oldW;
+                        ball.y *= H / oldH;
+                    });
+                })();
+                </script>
+
                 <h2>The Open Question</h2>
 
                 <p>
@@ -143,7 +329,10 @@
                         <span class="chapter-nav-label">Previous chapter</span>
                         <span>← Chapter 8: Vibe-Coding a Website</span>
                     </a>
-                    <span></span>
+                    <a href="/blog/training-small-models.html" class="chapter-nav-link chapter-nav-next">
+                        <span class="chapter-nav-label">Next chapter</span>
+                        <span>Chapter 10: Small Models, Sharp Instincts →</span>
+                    </a>
                 </nav>
             </div>
                 </div>
@@ -163,6 +352,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {

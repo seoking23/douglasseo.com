@@ -17,22 +17,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html" class="side-nav-active">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -86,6 +71,149 @@
                     <li>Engagement metrics (3.2 transactions per user weekly)</li>
                     <li>Retention (78% 30-day retention)</li>
                 </ul>
+
+                <div class="viz-block" id="metrics-viz">
+                    <div class="viz-title">Popper by the Numbers</div>
+                    <div class="viz-metrics-grid">
+                        <div class="viz-metric-card">
+                            <div class="viz-metric-value" id="m-users">0</div>
+                            <div class="viz-metric-label">Active Users</div>
+                        </div>
+                        <div class="viz-metric-card">
+                            <div class="viz-metric-value" id="m-partners">0</div>
+                            <div class="viz-metric-label">Business Partners</div>
+                        </div>
+                        <div class="viz-metric-card">
+                            <div class="viz-metric-value" id="m-retention">0%</div>
+                            <div class="viz-metric-label">30-day Retention</div>
+                        </div>
+                        <div class="viz-metric-card">
+                            <div class="viz-metric-value" id="m-tx">0.0</div>
+                            <div class="viz-metric-label">Tx / User / Week</div>
+                        </div>
+                    </div>
+                    <canvas id="growth-canvas" style="width:100%;border-radius:4px;"></canvas>
+                    <div class="viz-caption">User growth milestones — from first 100 users to 1,100+. Each inflection point corresponds to a public building moment.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var viz = document.getElementById('metrics-viz');
+                    var canvas = document.getElementById('growth-canvas');
+                    var ctx = canvas.getContext('2d');
+                    var started = false;
+                    var milestones = [
+                        { month: 0, users: 0, label: 'Launch' },
+                        { month: 1, users: 100, label: '100 users\n(3 failed campaigns)' },
+                        { month: 3, users: 400, label: 'Firebase post\ngoes viral' },
+                        { month: 5, users: 800, label: 'Community\nflywheel starts' },
+                        { month: 7, users: 1100, label: '40% perf gain\nfrom community' }
+                    ];
+                    var TOTAL_MONTHS = 8;
+
+                    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+                    function animateCounters(p) {
+                        document.getElementById('m-users').textContent = Math.round(1100 * p).toLocaleString() + '+';
+                        document.getElementById('m-partners').textContent = Math.round(60 * p) + '+';
+                        document.getElementById('m-retention').textContent = Math.round(78 * p) + '%';
+                        document.getElementById('m-tx').textContent = (3.2 * p).toFixed(1);
+                    }
+
+                    function drawChart(progress) {
+                        var W = canvas.width, H = canvas.height;
+                        var pad = { top: 20, right: 24, bottom: 52, left: 52 };
+                        var cw = W - pad.left - pad.right;
+                        var ch = H - pad.top - pad.bottom;
+                        ctx.clearRect(0, 0, W, H);
+                        ctx.strokeStyle = '#e5e7eb';
+                        ctx.lineWidth = 1;
+                        for (var i = 0; i <= 4; i++) {
+                            var yg = pad.top + ch - (ch * i / 4);
+                            ctx.beginPath(); ctx.moveTo(pad.left, yg); ctx.lineTo(pad.left + cw, yg); ctx.stroke();
+                            ctx.fillStyle = '#9ca3af';
+                            ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+                            ctx.fillText(Math.round(1100 * i / 4), pad.left - 6, yg + 4);
+                        }
+                        ctx.strokeStyle = '#d1d5db';
+                        ctx.beginPath(); ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top + ch); ctx.lineTo(pad.left + cw, pad.top + ch); ctx.stroke();
+
+                        var pts = milestones.map(function(m) {
+                            return {
+                                x: pad.left + (m.month / TOTAL_MONTHS) * cw,
+                                y: pad.top + ch - (m.users / 1100) * ch,
+                                label: m.label, users: m.users
+                            };
+                        });
+
+                        var totalLen = 0;
+                        for (var k = 1; k < pts.length; k++) {
+                            var ddx = pts[k].x - pts[k-1].x, ddy = pts[k].y - pts[k-1].y;
+                            totalLen += Math.sqrt(ddx*ddx + ddy*ddy);
+                        }
+                        var targetLen = totalLen * Math.min(progress, 1);
+
+                        var grad = ctx.createLinearGradient(pts[0].x, 0, pts[pts.length-1].x, 0);
+                        grad.addColorStop(0, 'rgba(59,130,246,0.4)');
+                        grad.addColorStop(1, '#3b82f6');
+                        ctx.strokeStyle = grad;
+                        ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+                        ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+                        var drawnLen = 0, done = false;
+                        for (var k = 1; k < pts.length && !done; k++) {
+                            var ddx = pts[k].x - pts[k-1].x, ddy = pts[k].y - pts[k-1].y;
+                            var segLen = Math.sqrt(ddx*ddx + ddy*ddy);
+                            if (drawnLen + segLen >= targetLen) {
+                                var t2 = (targetLen - drawnLen) / segLen;
+                                ctx.lineTo(pts[k-1].x + ddx * t2, pts[k-1].y + ddy * t2);
+                                done = true;
+                            } else { ctx.lineTo(pts[k].x, pts[k].y); drawnLen += segLen; }
+                        }
+                        ctx.stroke();
+
+                        var dl2 = 0;
+                        for (var k = 1; k < pts.length; k++) {
+                            var ddx = pts[k].x - pts[k-1].x, ddy = pts[k].y - pts[k-1].y;
+                            dl2 += Math.sqrt(ddx*ddx + ddy*ddy);
+                            if (dl2 <= targetLen) {
+                                ctx.beginPath(); ctx.arc(pts[k].x, pts[k].y, 5, 0, Math.PI*2);
+                                ctx.fillStyle = '#3b82f6'; ctx.fill();
+                                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+                                ctx.stroke();
+                                var lines = pts[k].label.split('\n');
+                                ctx.fillStyle = '#4b5563';
+                                ctx.font = '10px sans-serif';
+                                ctx.textAlign = pts[k].x > pad.left + cw * 0.65 ? 'right' : 'left';
+                                var lx = ctx.textAlign === 'right' ? pts[k].x - 10 : pts[k].x + 10;
+                                var ly = pts[k].y - (lines.length > 1 ? 14 : 8);
+                                for (var li = 0; li < lines.length; li++) ctx.fillText(lines[li], lx, ly + li * 13);
+                            }
+                        }
+                        ctx.fillStyle = '#9ca3af'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+                        for (var mo = 0; mo <= TOTAL_MONTHS; mo += 2) ctx.fillText('M' + mo, pad.left + (mo/TOTAL_MONTHS)*cw, pad.top + ch + 16);
+                    }
+
+                    function start() {
+                        var W = viz.clientWidth - 52;
+                        canvas.width = Math.max(W, 200);
+                        canvas.height = Math.round(canvas.width * 0.36);
+                        var t0 = null, dur = 1800;
+                        function frame(ts) {
+                            if (!t0) t0 = ts;
+                            var p = easeOut(Math.min((ts - t0) / dur, 1));
+                            animateCounters(p);
+                            drawChart(p);
+                            if (p < 1) requestAnimationFrame(frame);
+                        }
+                        requestAnimationFrame(frame);
+                    }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) { if (e.isIntersecting && !started) { started = true; start(); } });
+                    }, { threshold: 0.25 });
+                    observer.observe(viz);
+                })();
+                </script>
 
                 <p>
                     This transparency creates accountability that's impossible to
@@ -211,6 +339,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         // Smooth scrolling for anchor links

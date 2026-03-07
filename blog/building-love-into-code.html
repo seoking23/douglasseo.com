@@ -17,22 +17,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html" class="side-nav-active">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -106,6 +91,236 @@
                     Each game was built from scratch with Cursor. No game engine, no framework with a steep setup cost. Just the frontend stack, moving fast, building things that worked well enough to be fun. The standard for "done" was: does this feel like something she'll smile at? Not: is this production quality? The constraint freed things up.
                 </p>
 
+                <div class="viz-block" id="games-viz">
+                    <div class="viz-title">The Four Games — Built for One Person</div>
+                    <div class="viz-game-grid">
+
+                        <div class="viz-game-card">
+                            <div style="display:flex;align-items:flex-start;gap:12px;">
+                                <canvas id="snake-canvas" width="72" height="72" style="border-radius:6px;background:#1e293b;flex-shrink:0;"></canvas>
+                                <div>
+                                    <div class="viz-game-card-title">Snake ♥</div>
+                                    <div class="viz-game-card-desc">Classic Snake, reskinned with relationship milestones as collectibles. The things you chase are the things you remember.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="viz-game-card">
+                            <div class="viz-game-card-title">Memory Match</div>
+                            <div class="viz-game-card-desc">Pairs of photos and shared moments. To win, you have to remember where things are — same as remembering where you were when they happened.</div>
+                            <div id="memory-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:10px;"></div>
+                        </div>
+
+                        <div class="viz-game-card">
+                            <div class="viz-game-card-title">Wordle — Relationship Edition</div>
+                            <div class="viz-game-card-desc">Every word is something specific to us. The vocabulary of two people in love is its own language.</div>
+                            <div id="wordle-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:10px;max-width:160px;"></div>
+                        </div>
+
+                        <div class="viz-game-card">
+                            <div class="viz-game-card-title">Relationship Quiz</div>
+                            <div class="viz-game-card-desc">Questions about us, our history, our habits. She knew all of them. That's the point.</div>
+                            <div id="quiz-display" style="margin-top:10px;">
+                                <div style="font-size:0.7rem;color:#6b7280;margin-bottom:6px;" id="quiz-q">Loading...</div>
+                                <div style="height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;">
+                                    <div id="quiz-bar" style="height:100%;background:#3b82f6;width:0%;transition:width 0.8s ease;border-radius:2px;"></div>
+                                </div>
+                                <div style="font-size:0.65rem;color:#3b82f6;margin-top:4px;" id="quiz-ans"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="viz-caption">Built for one person. The specificity is what makes it real.</div>
+                </div>
+
+                <style>
+                .memory-card {
+                    aspect-ratio: 1;
+                    border-radius: 4px;
+                    background: #f3f4f6;
+                    border: 1px solid #e5e7eb;
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:14px;
+                    transition: background 0.3s, border-color 0.3s, transform 0.2s;
+                    cursor: default;
+                }
+                .memory-card.revealed {
+                    background: rgba(59,130,246,0.08);
+                    border-color: rgba(59,130,246,0.35);
+                    transform: scale(1.05);
+                }
+                .wordle-cell {
+                    aspect-ratio:1;
+                    border:1px solid #d1d5db;
+                    border-radius:4px;
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:13px;font-weight:bold;
+                    color:#1f2937;
+                    background:#f9fafb;
+                    transition:background 0.3s,border-color 0.3s,transform 0.2s;
+                }
+                .wordle-cell.correct { background:rgba(16,185,129,0.18);border-color:rgba(16,185,129,0.5);transform:scale(1.05); }
+                .wordle-cell.present { background:rgba(245,158,11,0.18);border-color:rgba(245,158,11,0.5);transform:scale(1.05); }
+                </style>
+
+                <script>
+                (function() {
+                    var started = false;
+
+                    // ─── Snake mini-game ───
+                    var sc = document.getElementById('snake-canvas');
+                    var sctx = sc.getContext('2d');
+                    var CELL = 9, COLS = 8, ROWS = 8;
+                    var snake = [{x:3,y:3},{x:2,y:3},{x:1,y:3}];
+                    var dir = {x:1,y:0};
+                    var foods = [{x:6,y:2},{x:5,y:6}];
+                    var snakeTimer = null;
+
+                    function drawSnake() {
+                        sctx.clearRect(0,0,72,72);
+                        foods.forEach(function(f) {
+                            sctx.fillStyle = '#f87171';
+                            sctx.font = '9px sans-serif';
+                            sctx.textAlign='center';
+                            sctx.fillText('♥', f.x*CELL+CELL/2, f.y*CELL+CELL-1);
+                        });
+                        snake.forEach(function(s,i) {
+                            sctx.fillStyle = i===0 ? '#60a5fa' : 'rgba(96,165,250,' + (0.7 - i*0.06) + ')';
+                            sctx.beginPath();
+                            sctx.roundRect(s.x*CELL+1, s.y*CELL+1, CELL-2, CELL-2, 2);
+                            sctx.fill();
+                        });
+                    }
+
+                    function stepSnake() {
+                        var head = {x: (snake[0].x + dir.x + COLS) % COLS, y: (snake[0].y + dir.y + ROWS) % ROWS};
+                        var ate = foods.findIndex(function(f){return f.x===head.x && f.y===head.y;});
+                        snake.unshift(head);
+                        if (ate >= 0) {
+                            foods[ate] = {x: Math.floor(Math.random()*COLS), y: Math.floor(Math.random()*ROWS)};
+                        } else {
+                            snake.pop();
+                        }
+                        // change direction randomly occasionally
+                        if (Math.random() < 0.25) {
+                            var dirs = [{x:1,y:0},{x:-1,y:0},{x:0,y:1},{x:0,y:-1}];
+                            var d = dirs[Math.floor(Math.random()*4)];
+                            if (d.x !== -dir.x || d.y !== -dir.y) dir = d;
+                        }
+                        drawSnake();
+                    }
+
+                    // ─── Memory grid ───
+                    var memGrid = document.getElementById('memory-grid');
+                    var emojis = ['📸','🌸','✈️','🍜','🎮','♥'];
+                    var memCards = [];
+                    emojis.forEach(function(e) {
+                        [0,1].forEach(function() { memCards.push(e); });
+                    });
+                    memCards.sort(function(){return Math.random()-0.5;});
+                    var memEls = [];
+                    memCards.forEach(function(c) {
+                        var d = document.createElement('div');
+                        d.className = 'memory-card';
+                        d.textContent = '';
+                        d.dataset.val = c;
+                        memGrid.appendChild(d);
+                        memEls.push(d);
+                    });
+
+                    var memRevealed = [], memFlipTimer = null;
+                    function runMemAnim() {
+                        var idx = Math.floor(Math.random() * memEls.length);
+                        var el = memEls[idx];
+                        if (el.classList.contains('revealed')) {
+                            el.classList.remove('revealed');
+                            el.textContent = '';
+                        } else {
+                            el.classList.add('revealed');
+                            el.textContent = el.dataset.val;
+                        }
+                    }
+
+                    // ─── Wordle grid ───
+                    var wordleGrid = document.getElementById('wordle-grid');
+                    var words = ['MIWA', 'SEOUL', 'JAPAN', 'MATCH'];
+                    var wordIdx = 0;
+                    var wordleCells = [];
+                    for (var r = 0; r < 1; r++) {
+                        for (var c = 0; c < 5; c++) {
+                            var cell = document.createElement('div');
+                            cell.className = 'wordle-cell';
+                            wordleGrid.appendChild(cell);
+                            wordleCells.push(cell);
+                        }
+                    }
+
+                    function animateWord(word, delay) {
+                        var padded = (word + '     ').slice(0,5);
+                        var states = ['correct','correct','present','correct','correct'];
+                        wordleCells.forEach(function(c,i) {
+                            c.className='wordle-cell';
+                            c.textContent='';
+                            setTimeout(function(ci, ch, st) {
+                                return function() {
+                                    wordleCells[ci].textContent = ch;
+                                    setTimeout(function() { wordleCells[ci].classList.add(st); }, 150);
+                                };
+                            }(i, padded[i], states[i % states.length]), delay + i * 180);
+                        });
+                    }
+
+                    // ─── Quiz ───
+                    var quizQ = document.getElementById('quiz-q');
+                    var quizBar = document.getElementById('quiz-bar');
+                    var quizAns = document.getElementById('quiz-ans');
+                    var quizzes = [
+                        { q: 'What\'s her hair type?', a: '4C', p: 100 },
+                        { q: 'First trip we planned together?', a: 'Korea + Japan', p: 100 },
+                        { q: 'Her favorite game genre?', a: 'Puzzle & simulation', p: 85 },
+                        { q: 'What city does she want to visit first?', a: 'Seoul', p: 100 }
+                    ];
+                    var quizIdx = 0;
+                    function showQuiz(i) {
+                        var q = quizzes[i % quizzes.length];
+                        quizQ.textContent = q.q;
+                        quizBar.style.width = '0%';
+                        quizAns.textContent = '';
+                        setTimeout(function() {
+                            quizBar.style.width = q.p + '%';
+                            setTimeout(function() { quizAns.textContent = '✓ ' + q.a; }, 900);
+                        }, 200);
+                    }
+
+                    function start() {
+                        drawSnake();
+                        snakeTimer = setInterval(stepSnake, 220);
+                        memFlipTimer = setInterval(runMemAnim, 600);
+
+                        var wIdx = 0;
+                        function cycleWord() {
+                            animateWord(words[wIdx % words.length], 0);
+                            wIdx++;
+                            setTimeout(cycleWord, 2800);
+                        }
+                        cycleWord();
+
+                        showQuiz(0);
+                        setInterval(function() { quizIdx++; showQuiz(quizIdx); }, 3500);
+                    }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) {
+                            if (e.isIntersecting && !started) {
+                                started = true;
+                                start();
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                    observer.observe(document.getElementById('games-viz'));
+                })();
+                </script>
+
                 <h2>The Prize</h2>
 
                 <p>
@@ -162,6 +377,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         // Smooth scrolling for anchor links

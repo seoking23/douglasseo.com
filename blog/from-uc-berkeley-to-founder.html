@@ -17,22 +17,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html" class="side-nav-active">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -51,6 +36,124 @@
                 <p class="lead">
                     I walked into UC Berkeley's EECS program without ever having owned a computer. I had never played Minecraft. I had never written a line of code for fun. My classmates had been doing all three since middle school. This is the story of what happened next — and why I think it made me better.
                 </p>
+
+                <div class="viz-block" id="journey-viz">
+                    <div class="viz-title">The Path — From Zero to Founder</div>
+
+                    <style>
+                    .journey-wrap { position:relative; padding-left:32px; }
+                    .journey-line {
+                        position:absolute; left:10px; top:8px; bottom:8px; width:1px;
+                        background:#e5e7eb;
+                        overflow:hidden;
+                    }
+                    .journey-line-fill {
+                        position:absolute; top:0; left:0; right:0;
+                        height:0; background:linear-gradient(to bottom, #ccc 0%, #0066cc 100%);
+                        transition:height 1.4s cubic-bezier(0.4,0,0.2,1);
+                    }
+                    .journey-item {
+                        display:flex; align-items:flex-start; gap:16px;
+                        margin-bottom:0; padding:12px 0;
+                        opacity:0; transform:translateX(10px);
+                        transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1),
+                                    transform 0.5s cubic-bezier(0.4,0,0.2,1);
+                    }
+                    .journey-item.visible { opacity:1; transform:translateX(0); }
+                    .journey-dot {
+                        width:8px; height:8px; border-radius:50%;
+                        flex-shrink:0; margin-top:5px;
+                        border:1.5px solid currentColor;
+                        background:#fff;
+                        margin-left:-28px;
+                        transition:background 0.3s, transform 0.3s;
+                    }
+                    .journey-item:hover .journey-dot { background:currentColor; transform:scale(1.3); }
+                    .journey-content { flex:1; }
+                    .journey-label {
+                        font-size:0.82rem; font-weight:600; color:#222;
+                        line-height:1.3; margin-bottom:3px;
+                    }
+                    .journey-quote {
+                        font-size:0.76rem; color:#888; line-height:1.5;
+                        font-style:italic;
+                    }
+                    </style>
+
+                    <div class="journey-wrap" id="journey-wrap">
+                        <div class="journey-line"><div class="journey-line-fill" id="journey-fill"></div></div>
+                    </div>
+
+                    <div class="viz-caption">Seven milestones along a non-linear path. The line shifts from gray to blue as confidence accumulates.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var milestones = [
+                        { label:'No computer at home', quote:'"I was genuinely starting from zero, in a place designed for people starting much further along."', color:'#bbb' },
+                        { label:'Admitted to Berkeley EECS — Engineering Undeclared (<5%)', quote:'"A designation for people whose interests cross boundaries. I was proud of that."', color:'#aaa' },
+                        { label:'Imposter syndrome hits immediately', quote:'"Everyone was operating from a manual I had never been given. Not a better one — the same one."', color:'#c9924a' },
+                        { label:'Discovered LeetCode sophomore year', quote:'"I was still learning that the pipeline existed. The recruiting race had already been underway for a year."', color:'#b07d30' },
+                        { label:'Physics, AI, and business development', quote:'"Technical depth and real-world application — working at exactly the intersection I\'d always been meant to occupy."', color:'#4a9a70' },
+                        { label:'Intersection thinking clicks', quote:'"I didn\'t need to fit one box. Berkeley\'s Undeclared pathway is for people built for the intersections."', color:'#2a7ab5' },
+                        { label:'Founded Popper', quote:'"Confidence is a practice. The baseline goal underneath every other goal."', color:'#0066cc' }
+                    ];
+
+                    var wrap = document.getElementById('journey-wrap');
+                    var fill = document.getElementById('journey-fill');
+                    var itemEls = [];
+                    var started = false;
+
+                    milestones.forEach(function(m, i) {
+                        var item = document.createElement('div');
+                        item.className = 'journey-item';
+
+                        var dot = document.createElement('div');
+                        dot.className = 'journey-dot';
+                        dot.style.color = m.color;
+
+                        var content = document.createElement('div');
+                        content.className = 'journey-content';
+
+                        var label = document.createElement('div');
+                        label.className = 'journey-label';
+                        label.style.color = m.color === '#bbb' || m.color === '#aaa' ? '#555' : '#111';
+                        label.textContent = m.label;
+
+                        var quote = document.createElement('div');
+                        quote.className = 'journey-quote';
+                        quote.textContent = m.quote;
+
+                        content.appendChild(label);
+                        content.appendChild(quote);
+                        item.appendChild(dot);
+                        item.appendChild(content);
+                        wrap.appendChild(item);
+                        itemEls.push(item);
+                    });
+
+                    function start() {
+                        // Animate line fill
+                        requestAnimationFrame(function() {
+                            fill.style.height = '100%';
+                        });
+                        // Stagger items
+                        itemEls.forEach(function(el, i) {
+                            setTimeout(function() { el.classList.add('visible'); }, i * 120 + 80);
+                        });
+                    }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) {
+                            if (e.isIntersecting && !started) {
+                                started = true;
+                                start();
+                            }
+                        });
+                    }, { threshold: 0.2 });
+                    observer.observe(document.getElementById('journey-viz'));
+                })();
+                </script>
 
                 <h2>The Room I Walked Into</h2>
 
@@ -162,6 +265,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         // Smooth scrolling for anchor links

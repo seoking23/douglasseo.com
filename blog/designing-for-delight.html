@@ -18,22 +18,7 @@
     <main>
         <div class="dotted-surface" id="dottedSurface"></div>
         <div class="blog-layout">
-            <aside class="blog-side-nav">
-                <a href="/#writing" class="back-link">← Back to home</a>
-                <h2 class="side-nav-title">Contents</h2>
-                <a href="/blog/" class="side-nav-toc-link">Table of Contents</a>
-                <nav class="side-nav-list">
-                    <a href="/blog/designing-for-delight.html" class="side-nav-active">1. Designing for Delight</a>
-                    <a href="/blog/from-uc-berkeley-to-founder.html">2. From UC Berkeley to Founder</a>
-                    <a href="/blog/launching-curlyhair-ai.html">3. Curly-Hair-ai.com</a>
-                    <a href="/blog/engineering-poppers-infrastructure.html">4. Engineering Popper's Infra</a>
-                    <a href="/blog/building-in-public.html">5. Building in Public</a>
-                    <a href="/blog/building-love-into-code.html">6. Building Love into Code</a>
-                    <a href="/blog/collaborating-with-bashnota.html">7. Collaborating with BashNota</a>
-                    <a href="/blog/vibe-coding-a-website-from-scratch.html">8. Vibe-Coding a Website</a>
-                    <a href="/blog/the-gravity-of-learning.html">9. The Gravity of Learning</a>
-                </nav>
-            </aside>
+            <aside class="blog-side-nav"></aside>
             <div class="blog-main">
                 <div class="article-container">
             <a href="/blog/" class="back-link">← Table of Contents</a>
@@ -103,6 +88,179 @@
                     The big picture has to stay visible for that to happen. If you're too deep in the details, every cut feels like a loss with no context. But when the team is oriented around what we're ultimately trying to be true for our users, the cuts start to look different. They look like focus.
                 </p>
 
+                <div class="viz-block" id="loop-viz">
+                    <div class="viz-title">The Team-as-User Iteration Loop</div>
+
+                    <style>
+                    .loop-steps { display:flex; align-items:center; gap:0; position:relative; margin-bottom:20px; }
+                    .loop-step {
+                        flex:1; text-align:center; position:relative; padding:14px 8px 12px;
+                        border:1px solid #e5e7eb; border-radius:6px; background:#fff;
+                        transition: border-color 0.4s cubic-bezier(0.4,0,0.2,1),
+                                    box-shadow 0.4s cubic-bezier(0.4,0,0.2,1),
+                                    transform 0.3s cubic-bezier(0.4,0,0.2,1);
+                        cursor:default; z-index:1;
+                    }
+                    .loop-step.active {
+                        border-color: #0066cc;
+                        box-shadow: 0 0 0 3px rgba(0,102,204,0.08), 0 2px 12px rgba(0,102,204,0.1);
+                        transform: translateY(-2px);
+                        z-index:2;
+                    }
+                    .loop-step-num {
+                        font-size:0.65rem; letter-spacing:0.08em; color:#bbb;
+                        text-transform:uppercase; margin-bottom:5px;
+                        transition: color 0.3s;
+                    }
+                    .loop-step.active .loop-step-num { color:#0066cc; }
+                    .loop-step-name {
+                        font-size:0.8rem; font-weight:600; color:#555;
+                        line-height:1.3;
+                        transition: color 0.3s;
+                    }
+                    .loop-step.active .loop-step-name { color:#0a0a0a; }
+                    .loop-connector {
+                        width:24px; flex-shrink:0; height:2px; background:#e5e7eb;
+                        position:relative; overflow:visible; margin:0 -1px;
+                    }
+                    .loop-connector-dot {
+                        position:absolute; top:-3px; width:8px; height:8px;
+                        border-radius:50%; background:#0066cc;
+                        opacity:0;
+                        transition:none;
+                    }
+                    .loop-connector-dot.flowing {
+                        animation: flowDot 0.6s cubic-bezier(0.4,0,0.6,1) forwards;
+                    }
+                    @keyframes flowDot {
+                        0%   { left:0; opacity:0; }
+                        15%  { opacity:1; }
+                        85%  { opacity:1; }
+                        100% { left:calc(100% - 8px); opacity:0; }
+                    }
+                    .loop-insight {
+                        border-top:1px solid #eee; padding-top:16px;
+                        min-height:52px; display:flex; align-items:flex-start; gap:12px;
+                    }
+                    .loop-insight-step {
+                        font-size:0.7rem; font-weight:700; color:#0066cc;
+                        text-transform:uppercase; letter-spacing:0.07em;
+                        white-space:nowrap; padding-top:1px;
+                        min-width:80px;
+                    }
+                    .loop-insight-text {
+                        font-size:0.82rem; color:#555; line-height:1.55;
+                        transition: opacity 0.3s, transform 0.3s;
+                    }
+                    .loop-insight-text.fade-out { opacity:0; transform:translateY(4px); }
+                    .loop-insight-text.fade-in  { opacity:1; transform:translateY(0); }
+                    @media(max-width:600px){
+                        .loop-step-name { font-size:0.7rem; }
+                        .loop-connector { width:12px; }
+                    }
+                    </style>
+
+                    <div class="loop-steps" id="loop-steps"></div>
+
+                    <div class="loop-insight" id="loop-insight">
+                        <div class="loop-insight-step" id="loop-insight-step"></div>
+                        <div class="loop-insight-text fade-in" id="loop-insight-text"></div>
+                    </div>
+
+                    <div class="viz-caption">A loop, not a line. Delight is what survives when you've gone around it enough times.</div>
+                </div>
+
+                <script>
+                (function() {
+                    var stages = [
+                        { num:'01', name:'You\u00a0(User\u00a0#1)', insight:'Build what you\'d want to use every single day. You are permanently the closest person to the why.' },
+                        { num:'02', name:'Build\u00a0Fast',          insight:'Sketch in the morning, in hands by evening. Barely finished is exactly right — the mockup doesn\'t fight back.' },
+                        { num:'03', name:'Team\u00a0Test',           insight:'Team = Users #2–5. Real opinions from people who care enough to argue about it. That\'s the data you need first.' },
+                        { num:'04', name:'Measure\u00a0&\u00a0Watch', insight:'Data tells you what people did. Sitting beside someone tells you why. Both matter. Only one of them is enough.' },
+                        { num:'05', name:'Cut\u00a0or\u00a0Keep',    insight:'Speed of failure acknowledgment is the skill. It comes from caring more about whether it works than whether you were right.' }
+                    ];
+
+                    var stepsEl = document.getElementById('loop-steps');
+                    var insightStep = document.getElementById('loop-insight-step');
+                    var insightText = document.getElementById('loop-insight-text');
+                    var stepEls = [], connectorDots = [];
+                    var active = 0, timer = null;
+
+                    stages.forEach(function(s, i) {
+                        var div = document.createElement('div');
+                        div.className = 'loop-step' + (i === 0 ? ' active' : '');
+                        div.innerHTML = '<div class="loop-step-num">' + s.num + '</div><div class="loop-step-name">' + s.name + '</div>';
+                        stepsEl.appendChild(div);
+                        stepEls.push(div);
+
+                        if (i < stages.length - 1) {
+                            var conn = document.createElement('div');
+                            conn.className = 'loop-connector';
+                            var dot = document.createElement('div');
+                            dot.className = 'loop-connector-dot';
+                            conn.appendChild(dot);
+                            stepsEl.appendChild(conn);
+                            connectorDots.push(dot);
+                        }
+                    });
+
+                    function setActive(idx) {
+                        stepEls[active].classList.remove('active');
+                        var prev = active;
+                        active = idx;
+                        stepEls[active].classList.add('active');
+
+                        // Animate connector dot in direction of travel
+                        var connIdx = prev < active ? prev : active;
+                        if (connectorDots[connIdx]) {
+                            var dot = connectorDots[connIdx];
+                            dot.classList.remove('flowing');
+                            // flip direction if going backwards (wrap)
+                            dot.style.transform = (prev > active && !(prev === stages.length-1 && active === 0)) ? 'scaleX(-1)' : '';
+                            void dot.offsetWidth; // reflow
+                            dot.classList.add('flowing');
+                        }
+
+                        // Fade insight text
+                        insightText.classList.remove('fade-in');
+                        insightText.classList.add('fade-out');
+                        setTimeout(function() {
+                            insightStep.textContent = stages[active].num + ' — ' + stages[active].name.replace(/\u00a0/g, ' ');
+                            insightText.textContent = stages[active].insight;
+                            insightText.classList.remove('fade-out');
+                            insightText.classList.add('fade-in');
+                        }, 220);
+                    }
+
+                    // Init text
+                    insightStep.textContent = stages[0].num + ' — ' + stages[0].name.replace(/\u00a0/g, ' ');
+                    insightText.textContent = stages[0].insight;
+
+                    // Manual click
+                    stepEls.forEach(function(el, i) {
+                        el.addEventListener('click', function() {
+                            clearInterval(timer);
+                            if (i !== active) setActive(i);
+                            timer = setInterval(advance, 2800);
+                        });
+                    });
+
+                    function advance() { setActive((active + 1) % stages.length); }
+
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(e) {
+                            if (e.isIntersecting) {
+                                clearInterval(timer);
+                                timer = setInterval(advance, 2800);
+                            } else {
+                                clearInterval(timer);
+                            }
+                        });
+                    }, { threshold: 0.4 });
+                    observer.observe(document.getElementById('loop-viz'));
+                })();
+                </script>
+
                 <h2>People Don't Want the What. They Want the Why.</h2>
 
                 <p>
@@ -150,6 +308,7 @@
         </div>
     </footer>
 
+    <script src="/public/js/blog-nav.js"></script>
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         // Smooth scrolling for anchor links
