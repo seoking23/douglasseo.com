@@ -94,7 +94,7 @@ export const OtherProjects: React.FC = () => {
               description="All-in-one software platform for dancers, helping them manage their community, finances, and turn their passion into a career. Building core infrastructure and features as the first engineering hire."
               imageSrc="/werkflow-logo.png?height=300&width=600"
               tags={["Platform", "Dance", "Community", "Finances", "Career"]}
-              demoUrl="https://werkflow.us"
+              demoUrl="https://werk.dance"
               repoUrl="https://github.com/getwerk"
               details="Werkflow is revolutionizing how dancers manage their careers by providing tools for community building, financial management, and career development. As the first engineering hire, I'm building the core platform infrastructure and key features."
             />

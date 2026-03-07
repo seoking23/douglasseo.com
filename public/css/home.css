@@ -1,5 +1,15 @@
 /* home.css - home page only (index.html) */
 
+/* Brand aura: full-page color wash on experience card hover */
+#bg-aura {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.75s ease;
+}
+
 /* Do not use blog.css narrow container on home */
 main .container {
     max-width: 1200px;
