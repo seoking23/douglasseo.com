@@ -19,7 +19,6 @@ main .container {
 section {
     padding: 1rem 0;
     position: relative;
-    z-index: 2;
 }
 
 .hero {
@@ -371,10 +370,29 @@ section {
 }
 
 .blog-preview-grid .post-card {
+    position: relative;
     border: none;
     border-bottom: 1px solid #e8e8e8;
     border-right: 1px solid #e8e8e8;
     padding: 1rem;
+    background-color: #f8f9fa
+}
+
+/* liquidGL glass overlay — sits over each card, lets clicks through.
+   z-index: 10 so the shared WebGL canvas (at maxLensZ-1 = 9) stacks
+   above normal page content. Card content children get z-index: 11
+   to remain readable on top of the glass refraction. */
+.card-glass {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    border-radius: 4px;
+}
+
+.blog-preview-grid .post-card > *:not(.card-glass) {
+    position: relative;
+    z-index: 11;
 }
 
 .blog-preview-grid .post-card:nth-child(3n) {

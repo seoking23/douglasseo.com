@@ -156,6 +156,7 @@
                         <div class="card-footer">
                             <span class="read-more-link">Read chapter →</span>
                         </div>
+                        <div class="card-glass"></div>
                     </a>
                     <a href="/blog/training-small-models.html" class="post-card post-card-clickable">
                         <div class="post-chapter-number">Chapter 10</div>
@@ -165,6 +166,7 @@
                         <div class="card-footer">
                             <span class="read-more-link">Read chapter →</span>
                         </div>
+                        <div class="card-glass"></div>
                     </a>
                     <a href="/blog/the-gravity-of-learning.html" class="post-card post-card-clickable">
                         <div class="post-chapter-number">Chapter 9</div>
@@ -174,6 +176,7 @@
                         <div class="card-footer">
                             <span class="read-more-link">Read chapter →</span>
                         </div>
+                        <div class="card-glass"></div>
                     </a>
                 </div>
                 <div style="text-align: center; margin-top: 1rem;">
@@ -340,5 +343,32 @@
         })();
     </script>
     <script src="/public/js/dotted-surface.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="/public/js/liquidGL.js" defer></script>
+    <!-- <script>
+        window.addEventListener('load', function () {
+            if (typeof liquidGL === 'undefined') {
+                console.error('index.html: liquidGL not loaded');
+                return;
+            }
+            liquidGL({
+                target: '.card-glass',
+                snapshot: 'body',
+                resolution: 1.0,
+                refraction: 0.001,
+                bevelDepth: 0.08,
+                bevelWidth: 0.18,
+                frost: 0,
+                shadow: true,
+                specular: false,
+                reveal: 'fade',
+                on: {
+                    init: function (instance) {
+                        console.log('index.html: liquidGL glass cards ready', instance);
+                    }
+                }
+            });
+        });
+    </script> -->
 </body>
 </html>
