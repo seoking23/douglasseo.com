@@ -1,8 +1,8 @@
-/* blog.css - blog styles (base.css master; modular imports) */
+/* blog/main.css - blog styles (base.css master; modular imports) */
 
-@import url('blog/layout.css');
-@import url('blog/article.css');
-@import url('blog/index.css');
+@import url('layout.css');
+@import url('article.css');
+@import url('index.css');
 
 /* Blog-specific overrides and glue */
 main {

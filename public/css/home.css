@@ -10,7 +10,7 @@
     transition: opacity 0.75s ease;
 }
 
-/* Do not use blog.css narrow container on home */
+/* Do not use blog/main.css narrow container on home */
 main .container {
     max-width: 1200px;
     min-height: auto;
