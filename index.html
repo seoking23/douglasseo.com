@@ -2,31 +2,34 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="/public/js/shared-head.js"></script>
     <title>Douglas Seo - AI Software Engineer & Entrepreneur</title>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <meta name="description" content="AI Software Engineer & Entrepreneur">
-    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="/public/favicon-48x48.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
-    
+
     <!-- Open Graph / Social Media Preview -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://douglasseo.com/">
     <meta property="og:title" content="Douglas Seo - AI Software Engineer & Entrepreneur">
     <meta property="og:description" content="UC Berkeley EECS grad with a passion for building impactful products. Founder of Popper LLC, Co-founder of Azetta AI .">
     <meta property="og:image" content="https://douglasseo.com/public/optimized/profile_image.webp">
-    
+
     <!-- Twitter Card -->
     <meta property="twitter:card" content="summary">
     <meta property="twitter:url" content="https://douglasseo.com/">
     <meta property="twitter:title" content="Douglas Seo - AI Software Engineer & Entrepreneur">
     <meta property="twitter:description" content="UC Berkeley EECS grad with a passion for building impactful products. Founder of Popper LLC, Co-founder of Azetta AI .">
     <meta property="twitter:image" content="https://douglasseo.com/public/optimized/profile_image.webp">
+
     <link rel="stylesheet" href="/public/css/base.css">
+
     <link rel="stylesheet" href="/public/css/dotted-surface.css">
+
     <link rel="stylesheet" href="/public/css/blog/main.css">
+
     <link rel="stylesheet" href="/public/css/home.css">
 </head>
 <body>
@@ -48,7 +51,7 @@
                     </br>
                         I stand on the shoulders of giants, and with the selfless love of my mother and grandmother learned English in Kindergarten in sunny Southern California. I dreamt to be an inventor and build a sustainable, better future for all. Berkeley sharpened the tools; founding and shipping did the rest.
                     </br>
-                        I built some cool stuff, but I'm most proud of <a href="https://popper.social" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #66a7e8;">popper</a>, an app that pays you for hanging out with friends, and makes some money for small businesses along the way—10k downloads, 50+ businesses, $20k monthly revenue generated for our client businesses, and an extremely effective system that handled 300k read/writes with sub-400ms load times, proof that the inventor dream can ship. 
+                        I built some cool stuff, but I'm most proud of <a href="https://popper.social" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #66a7e8;">popper</a>, an app that pays you for hanging out with friends, and makes some money for small businesses along the way—10k downloads, 50+ businesses, $20k monthly revenue generated for our client businesses, and an extremely effective system that handled 300k read/writes with sub-400ms load times, proof that the inventor dream can ship.
                     </p>
                     <p>
                         Now, I am building with <a href="https://www.tahabouhsine.com/#/" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: #66a7e8;">Taha Bouhsine</a>.
@@ -62,7 +65,7 @@
                         I nerd out over physics, math, spirituality, philanthropy, and hacking the money system.
                         </br>
                     </p>
-                    
+
             </div>
         </section>
 
@@ -70,7 +73,7 @@
             <div class="container">
                 <div style="max-width: 800px; margin: 0 auto;">
                     <h3 style="margin-bottom: 2rem; font-size: 1.8rem;">Experience</h3>
-                    
+
                     <a href="https://azetta.ai" target="_blank" rel="noopener noreferrer" class="experience-item-clickable" data-aura="rgba(79, 249, 117, 0.08)">
                     <div class="experience-item">
                         <div class="job-header">
@@ -129,12 +132,12 @@
                     </a>
 
                     <h3 style="margin-bottom: 2rem; margin-top: 3rem; font-size: 1.8rem;">Education</h3>
-                    
+
                     <div class="education-item" id="education-item">
                         <div class="job-header">
                             <div class="job-title"><img src="/public/optimized/UCB_seal.webp" alt="UC Berkeley seal" class="company-logo">B.S. in Electrical Engineering and Computer Science (EECS)</div>
                             <div class="job-date">2018 - 2022</div>
-                            
+
                         </div>
                         <div class="job-description" style="margin-bottom: 0.8rem;">
                             University of California, Berkeley
@@ -194,7 +197,7 @@
                 <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
                 <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
                 <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
-            
+
             </div>
             <div class="social-links">
                 <a href="tel:7079539522" class="footer-link">Call Me</a>
@@ -239,7 +242,7 @@
         // Copy email functionality
         document.getElementById('email-address').addEventListener('click', function(e) {
                 const email = 'douglasseo.business@gmail.com';
-                
+
                 if (navigator.clipboard && window.isSecureContext) {
                     navigator.clipboard.writeText(email).then(() => {
                         showCopySuccess();
@@ -249,7 +252,7 @@
                 } else {
                     fallbackCopyEmail(email);
                 }
-            
+
         });
 
         function showCopySuccess() {
@@ -268,14 +271,14 @@
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-            
+
             try {
                 document.execCommand('copy');
                 showCopySuccess();
             } catch (err) {
                 alert('Failed to copy email. Please copy manually: ' + email);
             }
-            
+
             document.body.removeChild(textArea);
         }
 
@@ -285,12 +288,12 @@
             const frame = document.getElementById('pdfFrame');
             const downloadLink = document.getElementById('pdfDownloadLink');
             const modalTitle = document.querySelector('.pdf-modal-title');
-            
+
             modalTitle.textContent = title;
             frame.src = pdfUrl;
             downloadLink.href = pdfUrl;
             modal.style.display = 'block';
-            
+
             // Prevent body scroll when modal is open
             document.body.style.overflow = 'hidden';
         }
@@ -298,10 +301,10 @@
         function closePdfModal() {
             const modal = document.getElementById('pdfModal');
             const frame = document.getElementById('pdfFrame');
-            
+
             modal.style.display = 'none';
             frame.src = '';
-            
+
             // Re-enable body scroll
             document.body.style.overflow = 'auto';
         }
@@ -342,9 +345,13 @@
             });
         })();
     </script>
+
     <script src="/public/js/dotted-surface.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+
     <script src="/public/js/liquidGL.js" defer></script>
+
     <!-- <script>
         window.addEventListener('load', function () {
             if (typeof liquidGL === 'undefined') {

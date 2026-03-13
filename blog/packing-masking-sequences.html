@@ -2,16 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="/public/js/shared-head.js"></script>
     <title>The Tokens You Don't See - Douglas Seo</title>
+
     <meta name="description" content="Sequence packing, intra-document masking, and why the invisible engineering of your training data shapes everything the model learns.">
-    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <link rel="stylesheet" href="/public/css/base.css">
+
     <link rel="stylesheet" href="/public/css/dotted-surface.css">
+
     <link rel="stylesheet" href="/public/css/blog/main.css">
+
     <style>
         .article-source {
             font-size: 0.78rem;
@@ -201,7 +204,7 @@
                     The real solution is <strong>packing</strong>: shuffle your documents, concatenate them end-to-end with an end-of-sequence (EOS) token between each, then chunk the result into fixed-length sequences. A document that ends partway through a chunk is continued in the next chunk. You fill every training sequence to capacity, and no compute is wasted.
                 </p>
 
-                <!-- Visualization 1: Packing Diagram -->
+    <!-- Visualization 1: Packing Diagram -->
                 <div class="viz-block">
                     <p class="viz-title">Fig. 1 — Document Packing into Fixed-Length Sequences</p>
                     <div class="viz-controls">
@@ -236,7 +239,7 @@
                     The fix is conceptually simple: modify the attention mask so that tokens can only attend to previous tokens within the same document. When a training sequence contains four packed documents, each document operates as if it is the only one — tokens from document B cannot attend to tokens from document A, even if they're in the same sequence at earlier positions.
                 </p>
 
-                <!-- Visualization 2: Attention Mask -->
+    <!-- Visualization 2: Attention Mask -->
                 <div class="viz-block">
                     <p class="viz-title">Fig. 2 — Attention Mask: Causal vs. Intra-Document</p>
                     <div class="viz-controls">
@@ -281,7 +284,7 @@
                     The implication for training strategy: <strong>you should enable document masking from the start</strong>, even if it doesn't visibly help early. The cost of enabling it is negligible (a mask computation), and it sets you up correctly for long context extension later. Retrofitting it after the fact — turning on document masking midway through a training run — may produce inconsistent representations because part of the model's learning happened with different attention patterns.
                 </p>
 
-                <!-- Visualization 3: Long Context Impact -->
+    <!-- Visualization 3: Long Context Impact -->
                 <div class="viz-block">
                     <p class="viz-title">Fig. 3 — Document Masking Impact: Short vs. Long Context</p>
                     <div class="viz-controls">
@@ -350,7 +353,9 @@
     </footer>
 
     <script src="/public/js/blog-nav.js"></script>
+
     <script src="/public/js/dotted-surface.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
     // ── Packing diagram ───────────────────────────────────────────────────────

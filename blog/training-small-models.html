@@ -2,17 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="/public/js/shared-head.js"></script>
     <title>Small Models, Sharp Instincts - Douglas Seo</title>
+
     <meta name="description" content="Before you can train big, you need to know how to read what your model is telling you. A guide to disciplined small-model training.">
-    <link rel="icon" type="image/png" sizes="16x16" href="/public/favicon-16x16.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/public/favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/public/apple-touch-icon.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
     <link rel="stylesheet" href="/public/css/base.css">
+
     <link rel="stylesheet" href="/public/css/dotted-surface.css">
+
     <link rel="stylesheet" href="/public/css/blog/main.css">
+
     <style>
         .viz-block {
             margin: 2.5rem 0;
@@ -175,7 +179,7 @@
 
                 <p><strong>Loss curve.</strong> The training loss is the most fundamental signal. A healthy loss curve decays smoothly and consistently, with small random noise around the trend. Deviations from this pattern carry specific meaning.</p>
 
-                <!-- Visualization 1: Loss Curve -->
+    <!-- Visualization 1: Loss Curve -->
                 <div class="viz-block">
                     <p class="viz-title">Fig. 1 — Training Loss Curve</p>
                     <div class="viz-controls">
@@ -198,7 +202,7 @@
 
                 <p><strong>Gradient norm.</strong> The magnitude of your gradients tells you how aggressively the model is trying to update its weights at each step. Too large, and you risk instability; too small, and learning has effectively stopped.</p>
 
-                <!-- Visualization 2: Gradient Norm -->
+    <!-- Visualization 2: Gradient Norm -->
                 <div class="viz-block">
                     <p class="viz-title">Fig. 2 — Gradient Norm Over Training</p>
                     <div class="viz-controls">
@@ -216,7 +220,7 @@
 
                 <p><strong>Ablation comparison.</strong> Once you have a stable baseline, the ablation is the instrument for understanding which choices actually matter. The chart below shows what a structured comparison looks like: one variable changed at a time, all else held constant, evaluated against final validation loss.</p>
 
-                <!-- Visualization 3: Ablation Comparison -->
+    <!-- Visualization 3: Ablation Comparison -->
                 <div class="viz-block">
                     <p class="viz-title">Fig. 3 — Ablation Comparison (Final Validation Loss)</p>
                     <div class="viz-controls">
@@ -314,6 +318,7 @@
     </footer>
 
     <script src="/public/js/blog-nav.js"></script>
+
     <script src="/public/js/dotted-surface.js"></script>
     <script>
         // ── Shared chart defaults ──────────────────────────────────────────────
