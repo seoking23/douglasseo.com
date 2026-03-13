@@ -27,6 +27,18 @@
     padding: 0;
 }
 
+.posts-section {
+    margin-bottom: var(--space-xl);
+}
+
+.posts-section-label {
+    font-size: var(--font-size-3xs);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-widest);
+    color: var(--color-muted);
+    margin-bottom: var(--space-sm);
+}
+
 .posts-grid {
     display: block;
     margin-bottom: 0;

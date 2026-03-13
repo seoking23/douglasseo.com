@@ -12,6 +12,7 @@ const CHAPTERS = [
     { slug: 'the-gravity-of-learning',            label: '9. The Gravity of Learning' },
     { slug: 'training-small-models',              label: '10. Small Models, Sharp Instincts' },
     { slug: 'packing-masking-sequences',           label: '11. The Tokens You Don\'t See' },
+    { slug: 'infrastructure-the-unsung-hero',      label: '12. Infrastructure: The Unsung Hero' },
 ];
 
 (function () {

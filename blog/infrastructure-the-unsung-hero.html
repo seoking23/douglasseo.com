@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <script src="/public/js/shared-head.js"></script>
+    <title>Infrastructure: The Unsung Hero - Douglas Seo</title>
+
+    <meta name="description" content="GPUs, memory hierarchies, NVLink, PCIe, and why the hardware layer underneath your training run shapes everything about what you can actually build.">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <link rel="stylesheet" href="/public/css/base.css">
+
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
+
+    <link rel="stylesheet" href="/public/css/blog/main.css">
+
+    <style>
+        .article-source {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        .article-source a { color: #6b7280; }
+
+        .viz-block {
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .viz-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin: 0 0 1rem 0;
+            font-family: Georgia, serif;
+        }
+        .viz-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .viz-btn {
+            padding: 0.3rem 0.75rem;
+            font-size: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            background: white;
+            cursor: pointer;
+            font-family: Georgia, serif;
+            color: #374151;
+            transition: all 0.15s;
+        }
+        .viz-btn.active {
+            background: #374151;
+            color: white;
+            border-color: #374151;
+        }
+        .viz-btn:hover:not(.active) {
+            background: #f3f4f6;
+        }
+        .viz-caption {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.75rem;
+            line-height: 1.5;
+            font-style: italic;
+        }
+        .viz-block canvas {
+            max-height: 320px;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="dotted-surface" id="dottedSurface"></div>
+        <div class="blog-layout">
+            <aside class="blog-side-nav"></aside>
+            <div class="blog-main">
+                <div class="article-container">
+            <a href="/blog/" class="back-link">← Table of Contents</a>
+
+            <div class="article-header">
+                <div class="chapter-label">Chapter 12</div>
+                <h1 class="article-title">Infrastructure: The Unsung Hero</h1>
+                <div class="article-meta">
+                    <time datetime="2026-03-13">March 13, 2026</time>
+                    <span>•</span>
+                    <span>14 min read</span>
+                </div>
+                <p class="article-source">Derived from and in dialogue with <a href="https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook" target="_blank" rel="noopener noreferrer">The Smol Training Playbook</a> by Hugging Face (Ben Allal, Tunstall, Tazi et al., 2025). This chapter is my own synthesis and interpretation.</p>
+            </div>
+
+            <div class="article-content">
+                <p class="lead">
+                    Everyone training models has opinions about architecture and data. Almost nobody understands the hardware their model runs on. The infrastructure layer — GPUs, memory hierarchies, interconnects — gets treated like a utility: plug in compute, get tokens per second out. This is a mistake, and an expensive one.
+                </p>
+
+                <p>
+                    The HuggingFace team trained SmolLM3 on 384 H100s for nearly a month, processing 11 trillion tokens. By their own account, it was not a smooth ride. Node failures, storage issues, run restarts. The ability to handle those problems — to anticipate them, recover from them, and keep training low-maintenance — depends entirely on understanding the hardware layer. Not at the level of a chip architect, but enough to reason about where your bottlenecks are and what to do about them.
+                </p>
+
+                <p>
+                    This chapter is about developing that understanding. We'll start inside a single GPU — what it's actually made of, how it computes, how it moves data. Then we'll zoom out to how GPUs talk to each other, through shared memory, through custom interconnects, across nodes over a network. At every level, the question is the same: where is the bottleneck, and what does it cost you?
+                </p>
+
+                <h2>Inside a GPU: Compute and FLOPs</h2>
+
+                <p>
+                    A GPU is a massively parallel processor built for throughput, not latency. Where a CPU optimizes for executing a small number of complex instruction streams as fast as possible, a GPU achieves performance by running thousands of simpler operations simultaneously. The fundamental architectural difference is not speed — it is breadth.
+                </p>
+
+                <p>
+                    The basic compute unit is the Streaming Multiprocessor, or SM. The H100 has 132 of them. Each SM runs groups of 32 threads called warps in lockstep — all threads in a warp execute the same instruction at the same time on different data. When one warp stalls waiting on memory, the SM switches to another warp instantly, hiding the latency. This is the core mechanism that lets GPUs achieve high utilization: rather than waiting for slow memory, they keep dozens of warps in flight.
+                </p>
+
+                <p>
+                    Inside each SM are two types of cores. CUDA cores handle general floating-point arithmetic. Tensor cores are specialized for matrix multiplication — specifically the fused multiply-add operations that dominate transformer workloads. Tensor cores are why precision matters so much when discussing FLOPs. The H100 delivers 67 TFLOPs at FP32, 990 TFLOPs at BF16, and 3,960 TFLOPs at FP8. That is not a coincidence — it reflects how much more work the Tensor cores can pack into the same silicon at lower precision, when the operations can be mapped to their native format.
+                </p>
+
+                <p>
+                    The practical caveat: theoretical peak FLOPs are rarely achieved. The HuggingFace team benchmarked their H100s against real Llama 70B training matrix shapes and found BF16 throughput of 714–758 TFLOPs — about 72–77% of the theoretical 990 TFLOPs peak. End-to-end training efficiency (model FLOPs utilization, or MFU) is lower still: Meta achieved 38–41% for Llama 3 405B; the SmolLM3 3B run achieved roughly 30%. Much of the gap comes from communication overhead in distributed training. When planning runs, use achievable numbers, not marketing specs.
+                </p>
+
+                <h2>The Memory Hierarchy</h2>
+
+                <p>
+                    Here is the thing about GPU performance that takes time to internalize: for most practical deep learning workloads, the bottleneck is not compute. It is data movement. A GPU can have teraflops of theoretical compute, but if the memory system cannot feed it fast enough, those compute units sit idle. Understanding the memory hierarchy is really understanding where your time goes.
+                </p>
+
+                <p>
+                    Modern GPUs organize memory in layers, each faster but smaller than the one below it. At the bottom is HBM — High Bandwidth Memory, the GPU's main memory. The H100 has 80 GB of HBM3 with a theoretical bandwidth of 3.35 TB/s. Above that is a 50 MB L2 cache shared across the GPU at around 13 TB/s. Each SM has its own L1 cache and shared memory, 256 KB combined, at roughly 31 TB/s. At the top, registers — private to individual threads — operate at effective bandwidths approaching 100 TB/s per SM.
+                </p>
+
+                <!-- Visualization 1: Memory Hierarchy -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 1 — H100 Memory Hierarchy: Size vs. Bandwidth</p>
+                    <canvas id="memHierarchyChart"></canvas>
+                    <p class="viz-caption">Each memory tier trades capacity for bandwidth. Registers are fastest but tiny. HBM is large but slow relative to compute throughput. The gap between HBM and registers is roughly 30×. Most kernels spend their time waiting on HBM.</p>
+                </div>
+
+                <p>
+                    The practical implication is captured by a principle from Horace He: for memory-bound operations, computation is effectively free. If your kernel reads data from HBM, does a few operations, and writes back — the time is dominated entirely by the HBM access. Adding more arithmetic in between costs nothing, as long as you're not changing the memory access pattern. This is why operator fusion works so well.
+                </p>
+
+                <p>
+                    Flash Attention is the canonical example. Standard attention materializes the full N×N attention matrix in HBM: write scores, read for softmax, write again, read for the V multiplication. Flash Attention tiles the computation so intermediate results stay in fast SRAM, never touching HBM until the final output. The result is 2–4× speedups and O(N) rather than O(N²) HBM accesses — not because it does less compute, but because it does far less data movement.
+                </p>
+
+                <p>
+                    There is a diagnostic tool for understanding whether your kernel is compute-bound or memory-bound: the roofline model. Plot your kernel's arithmetic intensity (FLOPs per byte moved) on one axis, achieved performance on the other, and the roofline tells you which ceiling you're hitting. A kernel in the memory-bound region cannot be improved by using faster Tensor cores. It needs to move less data — through fusion, better access patterns, or higher arithmetic intensity.
+                </p>
+
+                <h2>How GPUs Talk to the World</h2>
+
+                <p>
+                    A single GPU is only part of the story. Before it can compute anything, data must be loaded from somewhere. In distributed training, GPUs must constantly exchange gradients, activations, and weights with each other. The bandwidth and latency of these external communication links determine how much of your theoretical GPU performance you can actually use.
+                </p>
+
+                <p>
+                    There are four external links that matter: CPU to GPU, GPU to GPU within a node (intranode), GPU to GPU across nodes (internode), and GPU to storage. Each has completely different performance characteristics, and bottlenecking on any one of them can tank your overall throughput.
+                </p>
+
+                <h2>CPU to GPU: The PCIe Bottleneck</h2>
+
+                <p>
+                    The CPU's job in training is to schedule work on the GPU — launching kernels, managing memory allocations, coordinating data transfers. It does this over a PCIe connection. In typical AWS P5 instances (H100 nodes), the CPU-to-GPU path runs through two PCIe hops: PCIe Gen4 x8 from the CPU to a PCIe switch (theoretical 15.75 GB/s), then PCIe Gen5 x16 from the switch to the GPU (63 GB/s). The bottleneck is the first hop.
+                </p>
+
+                <p>
+                    Actual measured bandwidth for CPU-to-GPU transfers peaks around 14.2 GB/s — about 90% of the PCIe Gen4 x8 theoretical limit. Round-trip latency for a CPU-to-GPU operation is approximately 1.4 microseconds. That sounds small, but for workloads that launch many small kernels, or that require frequent CPU–GPU synchronization (some mixture-of-experts implementations fall into this trap), the accumulated latency becomes a real cost. CUDA Graphs can help by capturing a sequence of operations and replaying them as a single unit, eliminating per-kernel round-trip overhead.
+                </p>
+
+                <p>
+                    On multi-socket systems, NUMA affinity matters. If your GPU process runs on CPU cores in a different NUMA node than the one physically connected to the GPU, memory accesses must traverse the CPU interconnect — in tested AMD EPYC configurations, the cross-NUMA memory access latency is about 3.2× higher than same-socket access. This is invisible in aggregate statistics and can cause mysterious throughput degradation.
+                </p>
+
+                <h2>GPU to GPU: The Interconnect Ladder</h2>
+
+                <p>
+                    Within a single node, GPUs can communicate in three ways, with dramatically different performance characteristics. Understanding the gap between them is one of the more practically useful things in distributed training.
+                </p>
+
+                <!-- Visualization 2: GPU-GPU Bandwidth Comparison -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 2 — Intranode GPU-to-GPU Bandwidth (H100, 2-GPU SendRecv)</p>
+                    <div class="viz-controls">
+                        <button class="viz-btn active" id="bwLinearBtn" onclick="setBWScale('linear')">Linear scale</button>
+                        <button class="viz-btn" id="bwLogBtn" onclick="setBWScale('log')">Log scale</button>
+                    </div>
+                    <canvas id="bwChart"></canvas>
+                    <p class="viz-caption">Measured NCCL SendRecv bandwidth between two H100 GPUs via three paths. NVLink is 9× faster than EFA and 112× faster than routing through the CPU. NCCL automatically selects NVLink when available.</p>
+                </div>
+
+                <p>
+                    The slowest path routes data through CPU memory: GPU1 → PCIe switch → CPU RAM → PCIe switch → GPU2. Measured throughput: ~3 GB/s. This path saturates both PCIe links and CPU memory buses, and gets worse when multiple GPUs compete for the same CPU memory bandwidth simultaneously.
+                </p>
+
+                <p>
+                    GPUDirect RDMA over EFA (Amazon's Elastic Fabric Adapter) bypasses the CPU entirely, using direct memory access between GPU buffers. With four EFA NICs per GPU on P5 instances (each providing 100 Gbps), this path achieves ~38 GB/s — a meaningful improvement, but still a fraction of what NVLink offers.
+                </p>
+
+                <p>
+                    NVLink is the answer. NVIDIA's direct GPU-to-GPU interconnect, NVLink 4.0 on H100, provides 900 GB/s theoretical bidirectional bandwidth per GPU. Measured bidirectional bandwidth across all GPU pairs on a DGX H100 node: 786 GB/s, or 85% of theoretical. The DGX topology uses four NVSwitches connecting eight GPUs, ensuring every GPU pair has a single-hop path. NCCL automatically prioritizes NVLink for intranode communication when available — the practical lesson is to not accidentally disable it with misset environment variables.
+                </p>
+
+                <p>
+                    There is a further optimization for collective operations (all-reduce, all-gather) called NVLink SHARP (NVLS), which offloads the reduction computation to the NVSwitches themselves rather than pulling data back to the GPUs. For all-reduce operations, this provides roughly a 1.3× throughput improvement. For all-to-all operations — as used in mixture-of-experts routing — NVLS does not help, which is one of the reasons MoE architectures face tighter communication constraints.
+                </p>
+
+                <h2>Internode: The Network Wall</h2>
+
+                <p>
+                    When training spans multiple nodes, the interconnect drops from NVLink's 900 GB/s to whatever the cluster network provides. On AWS P5, this is EFA at 3,200 Gbps (400 GB/s) total per node — across 32 EFA NICs. Per GPU, the available internode bandwidth is far lower than intranode NVLink. This is the fundamental constraint that makes internode communication a bottleneck in large-scale training and why parallelism strategy matters so much.
+                </p>
+
+                <p>
+                    Tensor parallelism — splitting a single transformer layer across GPUs — requires extremely fast communication between those GPUs because each forward pass involves all-reduces across the split. This is why tensor parallelism is usually kept within a node, where NVLink bandwidth is available. Pipeline parallelism — splitting layers across nodes — works at the granularity of full activations passed between stages, which can be overlapped with computation and tolerates higher latency. Data parallelism — running identical models on different data — requires gradient synchronization at the end of each backward pass, which can be overlapped with the next forward pass. These strategies compose, and understanding the bandwidth characteristics of each link level is what determines how to compose them.
+                </p>
+
+                <h2>Storage: The Forgotten Tier</h2>
+
+                <p>
+                    Data has to come from somewhere. In large training runs, the storage layer — NVMe drives, distributed file systems, object stores — is a real bottleneck that often goes undiagnosed because it doesn't show up in GPU utilization metrics. A GPU that is waiting on data to load from disk looks the same as a GPU that is idle; both report low utilization.
+                </p>
+
+                <p>
+                    The practical rule is that your data pipeline must be able to saturate your GPU's memory bandwidth before the GPU finishes processing the previous batch. On P5 instances, local NVMe provides high sequential read bandwidth, but random access patterns or slow preprocessing can break this. The solution is to pre-tokenize data offline, write compact binary formats, and use multiple dataloader workers to prefetch aggressively. For multi-node training, shared storage becomes a contention point when hundreds of processes try to read from the same filesystem simultaneously.
+                </p>
+
+                <h2>Resilience: The Real Skill</h2>
+
+                <p>
+                    Understanding benchmarks is the easy part. The hard part is keeping a month-long training run alive across hardware that will inevitably fail. At the scale of SmolLM3 — 384 GPUs, 30 days — node failures are not edge cases. They are scheduled events you have not yet received notice of.
+                </p>
+
+                <p>
+                    The essentials: checkpoint frequently, at intervals short enough that losing a checkpoint is a minor inconvenience rather than days of lost work. Checkpoint asynchronously so the write doesn't block training. Design your training loop to resume cleanly from any checkpoint — including the dataloader state, so you don't re-train on data the model has already seen. Monitor your jobs actively; a stalled run with no alert can waste hours of cluster time before anyone notices.
+                </p>
+
+                <p>
+                    Node health checks before long runs are underrated. Hardware passes burn-in tests at purchase and then quietly develops problems over months of operation. A brief validation run — testing GPU-to-GPU bandwidth, verifying NVLink topology, confirming memory bandwidth on every node — is cheap insurance before committing to a multi-day job on potentially degraded hardware. The HuggingFace team learned to run these checks as standard practice after the SmolLM3 training experience.
+                </p>
+
+                <h2>What Infrastructure Actually Teaches</h2>
+
+                <p>
+                    Working through this layer changes how you think about the abstractions above it. When you understand that your model's activations need to travel through multiple levels of cache, each with different bandwidth and latency, you start to see architectural choices differently. Flash Attention is not just a clever algorithm — it is a direct response to the specific shape of the H100 memory hierarchy. The choice of parallelism strategy is not just about scaling — it is about which communication links are cheap and which are expensive.
+                </p>
+
+                <p>
+                    There is also something humbling about it. The gap between a 990 TFLOPs theoretical peak and a 30% MFU at the end of a real training run represents a lot of wasted potential — communication overhead, memory bandwidth limits, load imbalances, kernel launch latency. Some of that gap is recoverable with better engineering. Some of it is just the cost of doing distributed computation on hardware that was not designed specifically for your workload.
+                </p>
+
+                <p>
+                    The previous chapters covered what your model learns and how to read its training signals. This one is about the substrate that learning happens on. The tokens flowing through transformer layers, the gradient updates propagating backward through the computation graph — all of that is ultimately electrons moving through silicon along paths constrained by physics and engineering tradeoffs made years before you started your training run. Understanding those constraints is not optional. It is what lets you use them well.
+                </p>
+
+                <nav class="chapter-navigation">
+                    <a href="/blog/packing-masking-sequences.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Previous chapter</span>
+                        <span>← Chapter 11: The Tokens You Don't See</span>
+                    </a>
+                </nav>
+            </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="social-links">
+                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
+                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
+                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
+            </div>
+            <p>&copy; 2026 Douglas Seo. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/public/js/blog-nav.js"></script>
+
+    <script src="/public/js/dotted-surface.js"></script>
+    <script>
+        Chart.defaults.font.family = 'Georgia, serif';
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#6b7280';
+
+        // ── Fig. 1: Memory Hierarchy ────────────────────────────────────────────
+        (function () {
+            const ctx = document.getElementById('memHierarchyChart').getContext('2d');
+            const tiers = ['Registers (per SM)', 'L1 / Shared Mem (per SM)', 'L2 Cache', 'HBM3 (main)'];
+            const bandwidths = [100000, 31000, 13000, 3350]; // GB/s
+            const sizes = [20, 256, 51200, 81920]; // KB approximate
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: tiers,
+                    datasets: [
+                        {
+                            label: 'Bandwidth (GB/s)',
+                            data: bandwidths,
+                            backgroundColor: ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'],
+                            borderColor: ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'],
+                            borderWidth: 1,
+                            yAxisID: 'yBW',
+                        },
+                        {
+                            label: 'Capacity (KB)',
+                            data: sizes,
+                            backgroundColor: 'rgba(0,0,0,0)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 2,
+                            type: 'line',
+                            yAxisID: 'yCap',
+                            pointBackgroundColor: '#f59e0b',
+                            pointRadius: 5,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    if (ctx.datasetIndex === 0) return ' Bandwidth: ' + ctx.raw.toLocaleString() + ' GB/s';
+                                    const kb = ctx.raw;
+                                    if (kb >= 1024) return ' Capacity: ' + (kb / 1024).toFixed(0) + ' MB';
+                                    return ' Capacity: ' + kb + ' KB';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        yBW: {
+                            type: 'logarithmic',
+                            position: 'left',
+                            title: { display: true, text: 'Bandwidth (GB/s, log)' },
+                            grid: { color: '#f3f4f6' },
+                        },
+                        yCap: {
+                            type: 'logarithmic',
+                            position: 'right',
+                            title: { display: true, text: 'Capacity (KB, log)' },
+                            grid: { drawOnChartArea: false },
+                        }
+                    }
+                }
+            });
+        })();
+
+        // ── Fig. 2: GPU-GPU Bandwidth Comparison ───────────────────────────────
+        let bwChart;
+        const BW_DATA = {
+            labels: ['Through CPU (SHM)', 'Through EFA (GPUDirect RDMA)', 'Through NVLink 4.0'],
+            values: [3.24, 38.16, 364.93],
+            colors: ['#ef4444', '#f59e0b', '#3b82f6'],
+        };
+
+        function buildBWChart(scaleType) {
+            if (bwChart) bwChart.destroy();
+            const ctx = document.getElementById('bwChart').getContext('2d');
+            bwChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: BW_DATA.labels,
+                    datasets: [{
+                        label: 'Measured bandwidth (GB/s)',
+                        data: BW_DATA.values,
+                        backgroundColor: BW_DATA.colors.map(c => c + '33'),
+                        borderColor: BW_DATA.colors,
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ' ' + ctx.raw.toFixed(2) + ' GB/s'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: scaleType,
+                            title: { display: true, text: 'Bandwidth (GB/s)' },
+                            grid: { color: '#f3f4f6' },
+                            ...(scaleType === 'logarithmic' ? { min: 1 } : { min: 0 }),
+                        },
+                        y: {
+                            grid: { display: false },
+                        }
+                    }
+                }
+            });
+        }
+
+        function setBWScale(scale) {
+            document.getElementById('bwLinearBtn').classList.toggle('active', scale === 'linear');
+            document.getElementById('bwLogBtn').classList.toggle('active', scale === 'log');
+            buildBWChart(scale === 'log' ? 'logarithmic' : 'linear');
+        }
+
+        buildBWChart('linear');
+    </script>
+</body>
+</html>
