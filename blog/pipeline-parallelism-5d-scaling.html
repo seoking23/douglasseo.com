@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <script src="/public/js/shared-head.js"></script>
+    <title>The Full Orchestra: Pipeline Parallelism & 5D Scaling - Douglas Seo</title>
+
+    <meta name="description" content="Pipeline Parallelism, Context Parallelism, Expert Parallelism — the remaining three dimensions of distributed training, how all five compose, and the art of finding the right configuration.">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <link rel="stylesheet" href="/public/css/base.css">
+
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
+
+    <link rel="stylesheet" href="/public/css/blog/main.css">
+
+    <style>
+        .article-source {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        .article-source a { color: #6b7280; }
+
+        .viz-block {
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .viz-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin: 0 0 1rem 0;
+            font-family: Georgia, serif;
+        }
+        .viz-caption {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.75rem;
+            line-height: 1.5;
+            font-style: italic;
+        }
+        .viz-block canvas {
+            max-height: 320px;
+        }
+        .formula-block {
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background: #f9fafb;
+            border-left: 3px solid #d1d5db;
+            font-family: Georgia, serif;
+            font-size: 0.95rem;
+            color: #374151;
+            overflow-x: auto;
+        }
+        .key-insight {
+            margin: 2rem 0;
+            padding: 1.25rem 1.5rem;
+            background: #f0fdf4;
+            border-left: 3px solid #22c55e;
+            font-size: 0.92rem;
+            line-height: 1.7;
+        }
+        .key-insight strong {
+            color: #166534;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+        }
+        .comparison-table th, .comparison-table td {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+        .comparison-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        .comparison-table td {
+            color: #4b5563;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="dotted-surface" id="dottedSurface"></div>
+        <div class="blog-layout">
+            <aside class="blog-side-nav"></aside>
+            <div class="blog-main">
+                <div class="article-container">
+            <a href="/blog/" class="back-link">← Table of Contents</a>
+
+            <div class="article-header">
+                <div class="chapter-label">Chapter 14</div>
+                <h1 class="article-title">The Full Orchestra</h1>
+                <div class="article-meta">
+                    <time datetime="2026-03-17">March 17, 2026</time>
+                    <span>•</span>
+                    <span>18 min read</span>
+                </div>
+                <p class="article-source">Derived from and in dialogue with <a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook" target="_blank" rel="noopener noreferrer">The Ultra-Scale Playbook</a> by Hugging Face / Nanotron (2025). The benchmarks referenced here are drawn from their 4,000+ experiments on up to 512 H100 GPUs. This chapter is my own synthesis and interpretation.</p>
+            </div>
+
+            <div class="article-content">
+                <p class="lead">
+                    Data Parallelism splits the batch. Tensor Parallelism splits the layers horizontally. But what happens when the model is too large to fit on a single node, the sequence is 128k tokens long, or the architecture has 256 specialized experts? You need more dimensions.
+                </p>
+
+                <p>
+                    The previous chapter covered the first two scaling strategies: DP (with ZeRO) and TP (with SP). Together they handle batch-dimension and hidden-dimension parallelism. This chapter introduces the remaining three: Pipeline Parallelism splits the model vertically across nodes; Context Parallelism splits long sequences across the attention computation; Expert Parallelism distributes MoE experts. Then we put all five together and face the real question: given your model, your cluster, and your target batch size, which combination should you actually use?
+                </p>
+
+                <h2>Pipeline Parallelism: Splitting by Depth</h2>
+
+                <p>
+                    Tensor Parallelism's communication sits in the critical path of every layer — all-reduces that cannot be hidden behind computation. This is why TP struggles to scale past the intra-node NVLink boundary. For models too large to fit on a single node's worth of GPUs (70B+ parameters), we need a different strategy.
+                </p>
+
+                <p>
+                    Pipeline Parallelism (PP) solves this by splitting the model's layers across GPUs vertically. GPU 1 takes layers 1–4, GPU 2 takes layers 5–8, and so on. Each GPU only stores and computes its assigned layers. The forward pass becomes a sequential pipeline: GPU 1 processes a micro-batch and sends the activations to GPU 2, which processes them through its layers and sends them forward.
+                </p>
+
+                <p>
+                    The bandwidth requirement is comparatively gentle. Unlike TP, which communicates several times within each layer, PP only sends activations at a handful of layer boundaries. This makes PP well-suited for inter-node communication, where bandwidth is lower but the communication is infrequent enough to tolerate it.
+                </p>
+
+                <p>
+                    The problem is the bubble.
+                </p>
+
+                <h2>The Bubble Problem</h2>
+
+                <p>
+                    In a naive implementation — forward through all stages, then backward through all stages — each GPU sits idle while waiting for others to finish. If you have <em>p</em> pipeline stages and the forward + backward time for one micro-batch through one stage is (t_f + t_b), the bubble overhead ratio is:
+                </p>
+
+                <div class="formula-block">
+                    r_bubble = (p − 1) / 1 = p − 1
+                </div>
+
+                <p>
+                    With 8 pipeline stages, the bubble is 7× the useful computation time. Most of your GPUs are idle most of the time. This is obviously unacceptable. The history of pipeline parallelism is largely the history of clever scheduling to shrink this bubble.
+                </p>
+
+                <p>
+                    <strong>Micro-batching (AFAB):</strong> The first tool is splitting the batch into <em>m</em> micro-batches. While GPU 2 processes micro-batch 1, GPU 1 can start micro-batch 2. In the All-Forward-All-Backward (AFAB) schedule, you run all forward passes first, then all backward passes. The bubble shrinks:
+                </p>
+
+                <div class="formula-block">
+                    r_bubble = (p − 1) / m
+                </div>
+
+                <p>
+                    With 8 stages and 32 micro-batches, the bubble drops to about 22% — painful but workable. The downside: you must store activations for all <em>m</em> micro-batches simultaneously, which can explode memory.
+                </p>
+
+                <p>
+                    <strong>1F1B (One-Forward-One-Backward):</strong> The insight here is to start backward passes as soon as possible. Once the first micro-batch completes its forward pass through all stages, start the backward pass immediately — even while later micro-batches are still in their forward pass. The steady state alternates: one forward, one backward, one forward, one backward. The bubble is the same size as AFAB (same formula), but activation memory drops from <em>m</em> stored micro-batches to just <em>p</em>. This lets you safely increase <em>m</em>, which further shrinks the bubble.
+                </p>
+
+                <!-- Visualization 1: PP Bubble Comparison -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 1 — Pipeline Bubble Ratio: Naive vs. Micro-batched Schedules</p>
+                    <canvas id="ppBubbleChart"></canvas>
+                    <p class="viz-caption">Bubble overhead as a fraction of total computation time, for p=8 pipeline stages. More micro-batches reduce the bubble proportionally. 1F1B and AFAB have the same bubble size, but 1F1B stores fewer activations, enabling more micro-batches in practice.</p>
+                </div>
+
+                <p>
+                    <strong>Interleaved stages:</strong> Rather than assigning contiguous layers to each GPU (layers 1–4 on GPU 1), assign them in a round-robin pattern (layers 1, 5 on GPU 1; layers 2, 6 on GPU 2; etc.). Each micro-batch loops through the pipeline multiple times, but each pass through a GPU is shorter by a factor of <em>v</em> (the number of interleaved chunks per GPU). The bubble shrinks further:
+                </p>
+
+                <div class="formula-block">
+                    r_bubble = (p − 1) / (v × m)
+                </div>
+
+                <p>
+                    The tradeoff: communication volume increases by <em>v</em> (more, smaller activation transfers) and scheduling becomes more complex. Llama 3.1 used a 1F1B schedule with interleaved stages and a tunable priority between "depth-first" (close loops fast) and "breadth-first" (fill the pipeline first).
+                </p>
+
+                <p>
+                    <strong>Zero Bubble and DualPipe:</strong> The most recent frontier. The key observation is that the backward pass through a matrix multiplication involves two separable operations: backward for the inputs (B) and backward for the weights (W). While B must happen before earlier layers can continue their backward pass, W only needs to happen before the optimizer step. By scheduling W operations to fill the bubble, you can theoretically reduce it to zero. DeepSeek V3's DualPipe implementation runs two streams propagating from both ends of the pipeline, interleaving them to eliminate nearly all idle time. Their technical report notes they achieved "near-zero all-to-all communication overhead."
+                </p>
+
+                <p>
+                    The playbook's benchmarks confirm PP's strength at inter-node scaling: going from 1 node (PP=8) to 2 nodes (PP=16) only drops performance by ~14%, compared to ~43% for TP at the same boundary. PP communicates less frequently and tolerates higher latency better.
+                </p>
+
+                <h2>Context Parallelism: Taming Long Sequences</h2>
+
+                <p>
+                    Even with TP+SP sharding activations, the attention computation is quadratic in sequence length. At 128k tokens, even with full activation recomputation, the memory for attention at layer boundaries can exceed what a single node provides. Context Parallelism (CP) addresses this by splitting the input sequence across GPUs — not just outside the TP region (like SP does), but through the entire model, including attention.
+                </p>
+
+                <p>
+                    Most operations — MLPs, LayerNorm — process tokens independently, so splitting the sequence across GPUs is trivial. The challenge is attention: each token needs access to key/value pairs from all positions in the sequence (or all prior positions, for causal attention). The solution is Ring Attention.
+                </p>
+
+                <p>
+                    Each GPU starts with its local chunk of queries, keys, and values. It computes attention for the K/V pairs it already has. Simultaneously, it sends its K/V pairs to the next GPU in the ring and receives K/V pairs from the previous GPU. When the new K/V pairs arrive, it computes the next partial attention, accumulating results using online softmax (the same mathematical trick behind Flash Attention). After <em>p</em> rounds, every GPU has attended to the full sequence.
+                </p>
+
+                <p>
+                    A naive ring allocation — tokens 1–4 on GPU 1, tokens 5–8 on GPU 2 — causes load imbalance with causal masks. GPU 1 computes much less work than GPU 4 because early tokens attend to fewer positions. Zig-Zag Ring Attention fixes this by interleaving the token assignment (tokens 1, 8, 9, 16 on GPU 1; tokens 2, 7, 10, 15 on GPU 2; etc.), balancing the causal attention workload evenly across all GPUs.
+                </p>
+
+                <div class="key-insight">
+                    <strong>Key insight:</strong> Context Parallelism is specifically valuable when sequence length is the memory bottleneck — 128k+ tokens. For typical 4k–8k pretraining sequences, CP is unnecessary. Its communication is confined to the attention layers and can be overlapped with computation through the ring pattern.
+                </div>
+
+                <h2>Expert Parallelism: Distributing Specialized Modules</h2>
+
+                <p>
+                    Mixture-of-Experts (MoE) models like DeepSeek-V3, GPT-4, and Mixtral replace the single MLP in each Transformer layer with multiple "expert" MLPs. A learned router sends each token to one or a few experts. The result is a model with massive parameter counts (DeepSeek-V3 has 256 experts) but manageable compute per token — each token only activates a fraction of the total parameters.
+                </p>
+
+                <p>
+                    Expert Parallelism (EP) distributes these experts across GPUs. Since experts are fully independent (no shared computation), each GPU simply hosts a different subset of experts. The communication primitive is all-to-all: tokens are routed to the GPU holding their assigned expert, processed, and routed back. This is lightweight compared to TP — no splitting of matrix multiplications, just routing hidden states to the right place.
+                </p>
+
+                <p>
+                    EP is typically combined with DP, because EP only affects the MoE layers. Without DP, the non-expert layers (attention, LayerNorm) would be redundantly computed on every GPU. DeepSeek-V3 further optimizes by constraining the router to send each token to at most 4 nodes, keeping most token traffic intra-node to reduce cross-node communication.
+                </p>
+
+                <h2>The Five Dimensions, Composed</h2>
+
+                <p>
+                    You now have the complete toolkit:
+                </p>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Shards what</th>
+                            <th>Along which dimension</th>
+                            <th>Primary bottleneck</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Data Parallelism (DP)</strong></td>
+                            <td>Activations (different data per replica)</td>
+                            <td>Batch</td>
+                            <td>Limited by max batch size; communication at scale</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tensor Parallelism (TP/SP)</strong></td>
+                            <td>Parameters, activations</td>
+                            <td>Hidden dimension / sequence</td>
+                            <td>Requires high-bandwidth intra-node communication</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Pipeline Parallelism (PP)</strong></td>
+                            <td>Model parameters (by layer)</td>
+                            <td>Model depth</td>
+                            <td>Idle bubble; complex schedules</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Context Parallelism (CP)</strong></td>
+                            <td>Activations in attention</td>
+                            <td>Sequence length</td>
+                            <td>Communication in attention layers</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Expert Parallelism (EP)</strong></td>
+                            <td>Expert parameters</td>
+                            <td>Expert dimension</td>
+                            <td>Requires MoE architecture; routing overhead</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>
+                    And the three ZeRO stages, which layer on top of DP:
+                </p>
+
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>ZeRO Stage</th>
+                            <th>Shards</th>
+                            <th>Communication cost vs. vanilla DP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><strong>ZeRO-1</strong></td><td>Optimizer states</td><td>Equivalent</td></tr>
+                        <tr><td><strong>ZeRO-2</strong></td><td>Optimizer states + gradients</td><td>Equivalent</td></tr>
+                        <tr><td><strong>ZeRO-3 (FSDP)</strong></td><td>Optimizer states + gradients + params</td><td>~1.5× (3Ψ vs 2Ψ)</td></tr>
+                    </tbody>
+                </table>
+
+                <p>
+                    These dimensions are largely orthogonal and compose in predictable ways. TP occupies the fast intra-node NVLink. PP occupies the slower inter-node links for large models. DP spans whatever remains for batch-level scaling. CP adds sequence-dimension distribution when sequences are very long. EP distributes experts when you have MoE architectures.
+                </p>
+
+                <p>
+                    The playbook's summary diagram captures this: for a single Transformer layer in an MoE variant, TP shards the hidden dimension within the TP group, SP/CP shard the sequence dimension, PP distributes layers across pipeline stages, EP distributes experts, and DP replicates across the remaining GPUs.
+                </p>
+
+                <h2>Finding the Right Configuration</h2>
+
+                <p>
+                    Knowing the five dimensions is the easy part. Choosing the right combination for your specific model, cluster, and training target is the hard part. The playbook provides a systematic decision process, validated against thousands of benchmark configurations.
+                </p>
+
+                <p>
+                    <strong>Step 1: Fit a training step in memory.</strong> Start by determining whether a single model instance fits on your available GPUs. For models under 10B, a single technique suffices — TP=8 or ZeRO-3 across 8 GPUs. For 10B–100B, combine TP=8 with PP (for depth sharding) or ZeRO-3 (for parameter sharding). For very long sequences, add CP. For MoE, add EP.
+                </p>
+
+                <p>
+                    <strong>Step 2: Hit your target global batch size.</strong> Adjust DP degree and gradient accumulation steps to reach the desired batch size. Maximize DP over gradient accumulation (parallel is faster than sequential). For long sequences, CP can help increase the effective batch size.
+                </p>
+
+                <p>
+                    <strong>Step 3: Optimize throughput.</strong> This is where empirical benchmarking matters. Scale TP within the node first (fast NVLink). Add DP with ZeRO-2 across nodes. When DP communication becomes a bottleneck (at ~512+ GPUs), transition to PP for the inter-node dimension. Experiment with micro-batch sizes — the optimal balance depends on your specific compute-to-communication ratio.
+                </p>
+
+                <!-- Visualization 2: Configuration Decision -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 2 — Optimal Parallelism Strategy by Model Size and Cluster Scale</p>
+                    <canvas id="configHeatmapChart"></canvas>
+                    <p class="viz-caption">Illustrative MFU (Model FLOPs Utilization) across model sizes and node counts. Larger models achieve higher utilization at scale. Small models on large clusters suffer from communication overhead dominating compute. At 1024+ GPUs, combining TP+PP+DP is typically required.</p>
+                </div>
+
+                <p>
+                    The playbook ran every possible distributed configuration for multiple model sizes across 1–64 nodes of 8×H100s and distilled the results into heatmaps of optimal configurations. Several patterns emerge:
+                </p>
+
+                <p>
+                    First, <strong>efficiency drops as you add nodes</strong>, especially for smaller models. A 3B model on 64 nodes has far more communication overhead relative to its compute than a 70B model on the same cluster. You can partially compensate by increasing batch size, but you are ultimately constrained by your target global batch size.
+                </p>
+
+                <p>
+                    Second, <strong>large models need enough GPUs to fit comfortably</strong>. An 80B model on 4 nodes barely fits and runs inefficiently near the GPU memory limit. Give it 8–16 nodes and efficiency jumps dramatically.
+                </p>
+
+                <p>
+                    Third, <strong>implementation quality matters as much as strategy</strong>. The playbook team found that after optimizing their PP code, PP outperformed TP in scenarios where TP had previously won. After further optimizing TP's communication overlap, TP regained the lead. The theoretical ranking of strategies is constantly shifting based on how well each is implemented for your specific framework and hardware.
+                </p>
+
+                <div class="key-insight">
+                    <strong>Key insight from the benchmarks:</strong> At the 1024+ GPU scale, a recommended starting point is TP=8 (within each node) + DP with ZeRO-2 (across nodes) + PP (for large models that need depth sharding). This uses TP where bandwidth is highest, PP where bandwidth is lower but communication is infrequent, and DP for the batch dimension with ZeRO-2's memory savings at minimal communication cost.
+                </div>
+
+                <h2>The Practical Reality</h2>
+
+                <p>
+                    The playbook team ran over 4,100 distributed experiments (over 16,000 including test runs) on up to 512 GPUs. Even with the theoretical understanding and carefully planned configurations, the experience was humbling. PyTorch processes failed to clean up. Slurm forcefully terminated jobs, causing node failures. Simple benchmarks that should take minutes stretched into hours. Some jobs hung indefinitely.
+                </p>
+
+                <p>
+                    This echoes what the SmolLM3 team experienced during their month-long training run (covered in Chapter 12): at scale, the challenge is not just choosing the right parallelism strategy. It is keeping the system alive while that strategy executes. Checkpoint frequently, checkpoint asynchronously, monitor everything, and expect failures.
+                </p>
+
+                <p>
+                    The gap between theoretical peak performance and what you actually achieve in a training run — Meta achieved 38–41% MFU for Llama 3 405B — is the accumulated cost of all these realities: communication overhead, pipeline bubbles, load imbalances, kernel launch latency, hardware failures, and the imperfect overlap between computation and communication.
+                </p>
+
+                <h2>What This Chapter Teaches</h2>
+
+                <p>
+                    We started this series (Chapters 12–14) at the hardware layer: what a GPU is made of, how memory hierarchies work, how GPUs talk to each other. Then we covered the first two parallelism dimensions: DP/ZeRO for batch scaling, TP/SP for intra-layer sharding. Now we have the complete picture: PP for depth, CP for sequences, EP for experts, and the framework for composing all five.
+                </p>
+
+                <p>
+                    The Ultra-Scale Playbook's contribution is not just cataloging these techniques — the techniques are well-documented in their respective papers. The contribution is showing, through thousands of real experiments, how they interact in practice: where theoretical expectations hold, where they break down, and what the actual throughput and memory numbers look like on real hardware.
+                </p>
+
+                <p>
+                    The conclusion from the playbook resonates: "Orchestrating large clusters of GPUs to train LLMs efficiently is no easy feat. It involves choosing the right parallelization strategy for a given model and cluster size, overlapping communication and computation where possible, and writing custom kernels that take into account the hardware layout."
+                </p>
+
+                <p>
+                    None of these techniques is a silver bullet. Every one of them is a tradeoff between memory, computation, and communication. The art is in finding the right balance for your specific context — and having the infrastructure resilience to sustain it across days or weeks of continuous training. That balance is what separates a training run that finishes from one that never converges.
+                </p>
+
+                <nav class="chapter-navigation">
+                    <a href="/blog/data-parallelism-tensor-parallelism.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Previous chapter</span>
+                        <span>← Chapter 13: Splitting the Work</span>
+                    </a>
+                </nav>
+            </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="social-links">
+                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
+                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
+                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
+            </div>
+            <p>&copy; 2026 Douglas Seo. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/public/js/blog-nav.js"></script>
+
+    <script src="/public/js/dotted-surface.js"></script>
+    <script>
+        Chart.defaults.font.family = 'Georgia, serif';
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#6b7280';
+
+        // ── Fig. 1: PP Bubble Comparison ───────────────────────────────────────
+        (function () {
+            var ppBubbleContext = document.getElementById('ppBubbleChart').getContext('2d');
+            var pipelineStages = 8;
+            var microBatchCounts = [1, 2, 4, 8, 16, 32, 64, 128];
+            var bubbleRatios = microBatchCounts.map(function (numberOfMicroBatches) {
+                return ((pipelineStages - 1) / numberOfMicroBatches) * 100;
+            });
+
+            new Chart(ppBubbleContext, {
+                type: 'bar',
+                data: {
+                    labels: microBatchCounts.map(function (numberOfMicroBatches) { return 'm=' + numberOfMicroBatches; }),
+                    datasets: [{
+                        label: 'Bubble overhead (%)',
+                        data: bubbleRatios,
+                        backgroundColor: bubbleRatios.map(function (bubblePercentage) {
+                            if (bubblePercentage > 100) return 'rgba(239, 68, 68, 0.3)';
+                            if (bubblePercentage > 50) return 'rgba(245, 158, 11, 0.3)';
+                            return 'rgba(16, 185, 129, 0.3)';
+                        }),
+                        borderColor: bubbleRatios.map(function (bubblePercentage) {
+                            if (bubblePercentage > 100) return '#ef4444';
+                            if (bubblePercentage > 50) return '#f59e0b';
+                            return '#10b981';
+                        }),
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (tooltipContext) { return ' Bubble: ' + tooltipContext.raw.toFixed(1) + '% of compute time'; }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Bubble overhead (% of useful compute)' },
+                            grid: { color: '#f3f4f6' },
+                            beginAtZero: true,
+                        },
+                        x: {
+                            title: { display: true, text: 'Micro-batches (p=8 pipeline stages)' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        })();
+
+        // ── Fig. 2: Config Heatmap (grouped bar chart) ─────────────────────────
+        (function () {
+            var configHeatmapContext = document.getElementById('configHeatmapChart').getContext('2d');
+            var nodeCounts = ['1 node', '2 nodes', '4 nodes', '8 nodes', '16 nodes', '32 nodes', '64 nodes'];
+
+            new Chart(configHeatmapContext, {
+                type: 'bar',
+                data: {
+                    labels: nodeCounts,
+                    datasets: [
+                        {
+                            label: '3B model',
+                            data: [62, 58, 51, 43, 35, 28, 20],
+                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 1,
+                        },
+                        {
+                            label: '8B model',
+                            data: [58, 56, 52, 48, 43, 38, 32],
+                            backgroundColor: 'rgba(16, 185, 129, 0.5)',
+                            borderColor: '#10b981',
+                            borderWidth: 1,
+                        },
+                        {
+                            label: '70B model',
+                            data: [null, null, 35, 48, 46, 44, 41],
+                            backgroundColor: 'rgba(245, 158, 11, 0.5)',
+                            borderColor: '#f59e0b',
+                            borderWidth: 1,
+                        },
+                        {
+                            label: '405B model',
+                            data: [null, null, null, null, 32, 38, 40],
+                            backgroundColor: 'rgba(239, 68, 68, 0.5)',
+                            borderColor: '#ef4444',
+                            borderWidth: 1,
+                        },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (tooltipContext) {
+                                    if (tooltipContext.raw === null) return ' ' + tooltipContext.dataset.label + ': does not fit';
+                                    return ' ' + tooltipContext.dataset.label + ': ~' + tooltipContext.raw + '% MFU';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Model FLOPs Utilization (MFU %)' },
+                            grid: { color: '#f3f4f6' },
+                            beginAtZero: true,
+                            max: 70,
+                        },
+                        x: {
+                            title: { display: true, text: 'Cluster size (8 H100 GPUs per node)' },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

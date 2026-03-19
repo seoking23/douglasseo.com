@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <script src="/public/js/shared-head.js"></script>
+    <title>Splitting the Work: Data Parallelism, ZeRO & Tensor Parallelism - Douglas Seo</title>
+
+    <meta name="description" content="From replicating models across GPUs to sharding every byte of memory — Data Parallelism, ZeRO, Tensor Parallelism, and Sequence Parallelism explained from first principles.">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <link rel="stylesheet" href="/public/css/base.css">
+
+    <link rel="stylesheet" href="/public/css/dotted-surface.css">
+
+    <link rel="stylesheet" href="/public/css/blog/main.css">
+
+    <style>
+        .article-source {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+            font-style: italic;
+            line-height: 1.5;
+        }
+        .article-source a { color: #6b7280; }
+
+        .viz-block {
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .viz-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin: 0 0 1rem 0;
+            font-family: Georgia, serif;
+        }
+        .viz-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .viz-btn {
+            padding: 0.3rem 0.75rem;
+            font-size: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 3px;
+            background: white;
+            cursor: pointer;
+            font-family: Georgia, serif;
+            color: #374151;
+            transition: all 0.15s;
+        }
+        .viz-btn.active {
+            background: #374151;
+            color: white;
+            border-color: #374151;
+        }
+        .viz-btn:hover:not(.active) {
+            background: #f3f4f6;
+        }
+        .viz-caption {
+            font-size: 0.78rem;
+            color: #6b7280;
+            margin-top: 0.75rem;
+            line-height: 1.5;
+            font-style: italic;
+        }
+        .viz-block canvas {
+            max-height: 320px;
+        }
+        .formula-block {
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background: #f9fafb;
+            border-left: 3px solid #d1d5db;
+            font-family: Georgia, serif;
+            font-size: 0.95rem;
+            color: #374151;
+            overflow-x: auto;
+        }
+        .key-insight {
+            margin: 2rem 0;
+            padding: 1.25rem 1.5rem;
+            background: #f0fdf4;
+            border-left: 3px solid #22c55e;
+            font-size: 0.92rem;
+            line-height: 1.7;
+        }
+        .key-insight strong {
+            color: #166534;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="dotted-surface" id="dottedSurface"></div>
+        <div class="blog-layout">
+            <aside class="blog-side-nav"></aside>
+            <div class="blog-main">
+                <div class="article-container">
+            <a href="/blog/" class="back-link">← Table of Contents</a>
+
+            <div class="article-header">
+                <div class="chapter-label">Chapter 13</div>
+                <h1 class="article-title">Splitting the Work</h1>
+                <div class="article-meta">
+                    <time datetime="2026-03-17">March 17, 2026</time>
+                    <span>•</span>
+                    <span>16 min read</span>
+                </div>
+                <p class="article-source">Derived from and in dialogue with <a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook" target="_blank" rel="noopener noreferrer">The Ultra-Scale Playbook</a> by Hugging Face / Nanotron (2025). Over 4,000 scaling experiments on up to 512 GPUs informed the benchmarks referenced here. This chapter is my own synthesis and interpretation.</p>
+            </div>
+
+            <div class="article-content">
+                <p class="lead">
+                    You have a model. You have a GPU. The model fits, barely. Training crawls. The obvious next step is to throw more GPUs at it. The non-obvious part is everything that happens after.
+                </p>
+
+                <p>
+                    The previous chapter mapped the hardware layer — memory hierarchies, interconnects, the physics of data movement. This chapter is about the first two scaling strategies you reach for once a single GPU is no longer enough: Data Parallelism (with its memory-efficient extension, ZeRO) and Tensor Parallelism (with its complement, Sequence Parallelism). Together, they form the foundation of every large-scale training run happening today.
+                </p>
+
+                <p>
+                    The Hugging Face team's Ultra-Scale Playbook ran over 4,000 experiments on up to 512 H100 GPUs, systematically measuring what works and what breaks. What follows draws heavily on those findings — but the goal here is not to reproduce their results. It is to build the mental model you need to reason about parallelism from first principles, so when you face your own cluster and your own model, you know where to start.
+                </p>
+
+                <h2>Data Parallelism: The First Dimension</h2>
+
+                <p>
+                    The idea behind Data Parallelism (DP) is deceptively simple: replicate the entire model on every GPU, give each replica a different chunk of the batch, compute gradients independently, then average them. Each GPU sees different data but maintains an identical copy of the model. After the backward pass, an all-reduce operation synchronizes the gradients so every replica takes the same optimizer step.
+                </p>
+
+                <p>
+                    This works because gradient computation is embarrassingly parallel across samples. If you have 8 GPUs, you process 8 micro-batches simultaneously and achieve roughly 8× throughput — assuming the gradient synchronization can be hidden behind the computation.
+                </p>
+
+                <p>
+                    The first optimization is exactly that: overlapping the gradient all-reduce with the backward pass. Gradients for the last layer are ready before the backward pass reaches the first layer. By attaching all-reduce hooks to each parameter, you can start communicating gradients the moment they are computed, while the backward pass continues for earlier layers. PyTorch's DistributedDataParallel (DDP) does this automatically.
+                </p>
+
+                <p>
+                    The second optimization is bucketing. GPU communication operations are more efficient on large tensors than on many small ones. Instead of launching an independent all-reduce for each parameter's gradient, you group gradients into buckets and synchronize each bucket in a single operation. Think of it as packing items into boxes before shipping — fewer, larger shipments beat many small ones.
+                </p>
+
+                <p>
+                    The third optimization involves gradient accumulation. When combining gradient accumulation with DP, you should only synchronize gradients after the final accumulation step — not after every backward pass. PyTorch solves this with a <code>model.no_sync()</code> context manager that disables the all-reduce hooks during intermediate accumulation steps.
+                </p>
+
+                <div class="formula-block">
+                    Global Batch Size = micro_batch_size × gradient_accumulation_steps × data_parallel_degree
+                </div>
+
+                <p>
+                    Given a target global batch size, you trade gradient accumulation steps for data-parallel processes to speed up training. In practice, people maximize the DP degree first — it is inherently parallel — and only add gradient accumulation on top when they run out of GPUs before hitting the target batch size.
+                </p>
+
+                <!-- Visualization 1: DP Scaling -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 1 — Data Parallelism: Throughput vs. Communication Overhead</p>
+                    <canvas id="dpScalingChart"></canvas>
+                    <p class="viz-caption">Idealized throughput scales linearly with GPU count until communication overhead dominates. At 512+ GPUs, ring latency and bandwidth saturation erode the overlap between gradient sync and backward computation.</p>
+                </div>
+
+                <p>
+                    But DP has limits. As you add hundreds of GPUs, the overhead of the all-reduce grows — the network requirements become too large for the benefits. The playbook's benchmarks show throughput starting to drop quite significantly above a certain scale, while per-GPU memory stays constant. You cannot shard the model with vanilla DP; every replica holds the full model. If a single layer does not fit on one GPU, DP alone cannot help you.
+                </p>
+
+                <h2>ZeRO: Eliminating Redundancy</h2>
+
+                <p>
+                    Here is the thing about vanilla DP that should bother you: every GPU stores an identical copy of the optimizer states, gradients, and parameters. For a model trained with mixed precision and the Adam optimizer, the memory breakdown per GPU looks like this:
+                </p>
+
+                <div class="formula-block">
+                    Parameters (bf16): 2Ψ &nbsp;|&nbsp; Gradients (bf16): 2Ψ &nbsp;|&nbsp; Optimizer states + fp32 params: 12Ψ<br>
+                    Total per GPU: ~16Ψ bytes (where Ψ = parameter count)
+                </div>
+
+                <p>
+                    Every single GPU holds all 16Ψ bytes. For 8 GPUs, that is 8× redundancy in optimizer states, 8× in gradients, 8× in parameters. ZeRO (Zero Redundancy Optimizer), developed by Microsoft DeepSpeed, eliminates this waste by partitioning these tensors across the DP ranks.
+                </p>
+
+                <p>
+                    <strong>ZeRO-1</strong> partitions the optimizer states. Each GPU only stores 1/N of the optimizer states (where N is the DP degree). After the backward pass, instead of an all-reduce on gradients, you do a reduce-scatter — each GPU gets only the gradient shard it needs for its portion of the optimizer. After the optimizer step, an all-gather reconstructs the updated parameters on every GPU. Memory for optimizer states drops from 12Ψ to 12Ψ/N. The communication cost is equivalent to vanilla DP.
+                </p>
+
+                <p>
+                    <strong>ZeRO-2</strong> adds gradient partitioning. Since each GPU only needs 1/N of the gradients (the shard corresponding to its optimizer state shard), we can drop the rest immediately after the reduce-scatter. Memory for gradients drops from 2Ψ to 2Ψ/N. Communication cost is still equivalent to vanilla DP. There is essentially no overhead compared to ZeRO-1 — ZeRO-2 is almost always the better choice.
+                </p>
+
+                <p>
+                    <strong>ZeRO-3</strong> (also called FSDP — Fully Sharded Data Parallelism) goes all the way: optimizer states, gradients, and parameters are all sharded. Each GPU stores only 1/N of everything. Before each layer's forward pass, an all-gather reconstructs the parameters on demand; after use, they are immediately discarded. The backward pass works the same way in reverse. Total memory drops to (2Ψ + 2Ψ + 12Ψ)/N — you can drive per-GPU memory arbitrarily low by increasing the DP degree.
+                </p>
+
+                <!-- Visualization 2: ZeRO Memory Savings -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 2 — Per-GPU Memory Usage Across ZeRO Stages (7B Model, Adam, bf16)</p>
+                    <canvas id="zeroMemoryChart"></canvas>
+                    <p class="viz-caption">ZeRO-1 through ZeRO-3 progressively shard optimizer states, gradients, and parameters. At DP=64, ZeRO-3 reduces per-GPU model memory by ~64× compared to vanilla DP. Activation memory (not shown) is not affected by ZeRO.</p>
+                </div>
+
+                <p>
+                    The catch with ZeRO-3 is communication cost: 3Ψ total (an extra Ψ from the additional all-gathers for parameters) compared to 2Ψ for ZeRO-1/2. In practice, this is manageable with prefetching — gathering the next layer's parameters while computing on the current layer — as long as you do not scale DP past roughly 512 ranks.
+                </p>
+
+                <div class="key-insight">
+                    <strong>Key insight:</strong> ZeRO does not help with activation memory. Activations differ across DP replicas (each sees different data), so they are inherently not redundant and cannot be sharded this way. To tame activations, you need Tensor Parallelism — or its complement, Sequence Parallelism.
+                </div>
+
+                <h2>Tensor Parallelism: Splitting Within a Layer</h2>
+
+                <p>
+                    Data Parallelism and ZeRO replicate (or reconstruct) the full model on each GPU for every forward and backward pass. Tensor Parallelism (TP) takes a fundamentally different approach: it splits the matrix multiplications themselves across GPUs, so each device only ever computes a portion of each layer. This shards not just parameters, gradients, and optimizer states, but also activations — the one thing ZeRO cannot touch.
+                </p>
+
+                <p>
+                    The math that makes this possible is the distributive property of matrix multiplication. Given Y = X × W, you can split the weight matrix W by columns and compute each sub-product independently:
+                </p>
+
+                <div class="formula-block">
+                    Y = X · [W₁ | W₂] = [X·W₁ | X·W₂]
+                </div>
+
+                <p>
+                    This is <strong>column-parallel</strong>: each GPU gets a column shard of W, receives the full input X (via broadcast), and produces a column shard of Y. An all-gather combines the partial outputs.
+                </p>
+
+                <p>
+                    Alternatively, you can split W by rows and the input X correspondingly:
+                </p>
+
+                <div class="formula-block">
+                    Y = [X₁ | X₂] · [W₁ / W₂] = X₁·W₁ + X₂·W₂
+                </div>
+
+                <p>
+                    This is <strong>row-parallel</strong>: each GPU gets a row shard of W, a corresponding shard of X (via scatter), and produces a partial result. An all-reduce sums the partial results into the final output.
+                </p>
+
+                <p>
+                    The key insight from the Megatron-LM paper is how to compose these within a Transformer block to minimize communication. For the MLP (feedforward) layers: use column-parallel for the first linear, then row-parallel for the second. This requires only one all-reduce per MLP block in the forward pass. For multi-head attention: split Q, K, V projections column-parallel (each GPU gets a subset of heads), and apply row-parallel to the output projection. Again, one all-reduce per attention block.
+                </p>
+
+                <p>
+                    The result: 2 all-reduce operations per Transformer layer in the forward pass, and 2 in the backward pass. These sit directly in the computation's critical path — unlike DP's gradient sync, they cannot be fully overlapped with other work. This is the fundamental tradeoff of TP: you get activation sharding and memory savings, but you pay with exposed communication latency.
+                </p>
+
+                <!-- Visualization 3: TP Scaling -->
+                <div class="viz-block">
+                    <p class="viz-title">Fig. 3 — Tensor Parallelism: Throughput Drop at Inter-Node Boundary</p>
+                    <div class="viz-controls">
+                        <button class="viz-btn active" id="tpLinearBtn" onclick="setTPScale('linear')">Linear scale</button>
+                        <button class="viz-btn" id="tpLogBtn" onclick="setTPScale('log')">Log scale</button>
+                    </div>
+                    <canvas id="tpScalingChart"></canvas>
+                    <p class="viz-caption">Per-GPU throughput (TFLOPS) as TP degree increases. The steep drop from TP=8 to TP=16 corresponds to crossing the NVLink → EFA boundary. Within a node, TP communication rides on 900 GB/s NVLink. Across nodes, it drops to ~38 GB/s per GPU over EFA.</p>
+                </div>
+
+                <p>
+                    The playbook's benchmarks confirm what the theory predicts: the biggest performance cliff occurs when TP crosses the node boundary. Within a single 8-GPU node, NVLink provides ~900 GB/s bidirectional bandwidth — the all-reduces are fast. Going from TP=8 to TP=16 forces communication across the much slower inter-node network (~38 GB/s via EFA), and throughput drops by roughly 43%. This is why, in practice, TP is kept within a single node: TP ≤ 8 (or whatever your intra-node GPU count is).
+                </p>
+
+                <p>
+                    There is also a model-architecture constraint. The TP degree should not exceed the number of key/value heads in the attention mechanism, because each GPU needs intact heads to compute attention independently. For Llama-3 8B with 8 KV heads, TP should stay at 8 or below. Exceeding this requires duplicating KV heads across GPUs, adding synchronization complexity.
+                </p>
+
+                <h2>Sequence Parallelism: The Missing Complement</h2>
+
+                <p>
+                    Tensor Parallelism splits activations along the hidden dimension inside matrix multiplications. But operations like LayerNorm and Dropout need the full hidden dimension — they operate on complete activation vectors. In vanilla TP, this means gathering the full activations for these operations, which partially negates the memory savings.
+                </p>
+
+                <p>
+                    Sequence Parallelism (SP) fixes this by splitting activations along the sequence dimension for the non-TP operations. The idea: in the TP region (MLP, attention), activations are sharded across the hidden dimension. In the SP region (LayerNorm, Dropout), activations are sharded across the sequence dimension. Transitions between these regions use all-gather (SP→TP) and reduce-scatter (TP→SP) operations.
+                </p>
+
+                <p>
+                    The result is that the maximum activation size on any GPU drops from (batch × sequence × hidden) to (batch × sequence × hidden / TP), because at every point in the forward pass, activations are sharded along one dimension or the other. The communication volume is mathematically equivalent to vanilla TP — an all-reduce can be decomposed into an all-gather followed by a reduce-scatter — so SP adds no communication overhead.
+                </p>
+
+                <div class="key-insight">
+                    <strong>Key insight:</strong> TP splits along the hidden dimension. SP splits along the sequence dimension. Together, they ensure activations are always distributed — never fully materialized on any single GPU. This is what makes TP+SP the standard for intra-node parallelism in modern training frameworks like Megatron-LM and Nanotron.
+                </div>
+
+                <p>
+                    The playbook's benchmarks for a 70B model show dramatic memory savings: with TP/SP=16, you can fit sequence lengths of 16k tokens that would be impossible with TP alone. The throughput tradeoff is real — more parallelism means more communication — but within a single node, the NVLink bandwidth makes this practical.
+                </p>
+
+                <h2>How They Compose: The First Two Dimensions</h2>
+
+                <p>
+                    DP and TP are orthogonal. They shard different things (data vs. model weights/activations), communicate different tensors (gradients vs. partial results), and have different scaling characteristics (DP scales wide across nodes, TP scales deep within a node). This means they compose naturally.
+                </p>
+
+                <p>
+                    A typical starting configuration: TP=8 within each node (using NVLink), DP across nodes (using the cluster network). Each node holds one complete model replica; DP handles the gradient sync across replicas. If memory is tight, ZeRO-1 or ZeRO-2 can be layered on top of DP — they are complementary and add minimal overhead.
+                </p>
+
+                <p>
+                    ZeRO-3, on the other hand, sits in a more nuanced relationship with TP. Both shard model parameters, but through different mechanisms: ZeRO-3 gathers parameters on demand before computation, while TP partitions the computation itself so full parameters are never needed. You can combine them, but the communication costs compound. The playbook's guidance: for most scenarios, choose one or the other as your primary parameter-sharding strategy, and complement it with DP (plus ZeRO-1/2) for batch-dimension scaling.
+                </p>
+
+                <p>
+                    But what happens when the model is too large to fit even with TP=8? What about very long sequences where activation memory explodes? And how do you handle models with hundreds of specialized experts? These questions require the next set of tools: Pipeline Parallelism, Context Parallelism, and Expert Parallelism — the remaining three dimensions of the 5D parallelism framework. That is the subject of the next chapter.
+                </p>
+
+                <h2>What This Chapter Teaches</h2>
+
+                <p>
+                    Data Parallelism is the simplest form of distributed training — replicate, split the data, average the gradients. ZeRO eliminates the memory redundancy that vanilla DP introduces, turning every GPU in a cluster into a fraction of a complete training state. Tensor Parallelism goes further by splitting the computation itself, sharding activations along with everything else, but at the cost of exposed communication in the critical path.
+                </p>
+
+                <p>
+                    The reason understanding these techniques matters is not because you will implement them from scratch. PyTorch, DeepSpeed, Megatron-LM, and Nanotron handle the implementation details. The reason is that choosing between them — and choosing how to combine them — depends on understanding the tradeoffs: memory vs. communication, overlap potential vs. critical-path exposure, intra-node bandwidth vs. inter-node bandwidth. Every parallelism strategy is a bet on which resource is cheap and which is expensive in your specific setup.
+                </p>
+
+                <p>
+                    Chapter 12 gave you the hardware map. This chapter gave you the first two movement strategies. The next chapter completes the picture with the remaining three dimensions and the art of composing all five into a coherent training configuration.
+                </p>
+
+                <nav class="chapter-navigation">
+                    <a href="/blog/infrastructure-the-unsung-hero.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Previous chapter</span>
+                        <span>← Chapter 12: Infrastructure: The Unsung Hero</span>
+                    </a>
+                    <a href="/blog/pipeline-parallelism-5d-scaling.html" class="chapter-nav-link">
+                        <span class="chapter-nav-label">Next chapter</span>
+                        <span>Chapter 14: The Full Orchestra →</span>
+                    </a>
+                </nav>
+            </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="social-links">
+                <a href="https://github.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
+                <a href="https://twitter.com/seoking23" target="_blank" rel="noopener noreferrer" class="footer-link">Twitter</a>
+                <a href="https://instagram.com/douglas_seo" target="_blank" rel="noopener noreferrer" class="footer-link">Instagram</a>
+                <a href="https://linkedin.com/in/douglas-seo-337133186/" target="_blank" rel="noopener noreferrer" class="footer-link">LinkedIn</a>
+            </div>
+            <p>&copy; 2026 Douglas Seo. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/public/js/blog-nav.js"></script>
+
+    <script src="/public/js/dotted-surface.js"></script>
+    <script>
+        Chart.defaults.font.family = 'Georgia, serif';
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#6b7280';
+
+        // ── Fig. 1: DP Scaling ─────────────────────────────────────────────────
+        (function () {
+            var dpScalingContext = document.getElementById('dpScalingChart').getContext('2d');
+            var dpGPUCounts = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512];
+            var dpIdealThroughput = dpGPUCounts.map(function (numberOfGPUs) { return numberOfGPUs; });
+            var dpActualThroughput = [1, 1.98, 3.92, 7.75, 15.1, 29.2, 55.8, 105, 190, 340];
+
+            new Chart(dpScalingContext, {
+                type: 'line',
+                data: {
+                    labels: dpGPUCounts,
+                    datasets: [
+                        {
+                            label: 'Ideal (linear)',
+                            data: dpIdealThroughput,
+                            borderColor: '#d1d5db',
+                            borderDash: [6, 3],
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: false,
+                        },
+                        {
+                            label: 'Realistic throughput (relative)',
+                            data: dpActualThroughput,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#3b82f6',
+                            fill: true,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        x: { title: { display: true, text: 'Number of GPUs (DP degree)' }, grid: { color: '#f3f4f6' } },
+                        y: { title: { display: true, text: 'Relative throughput' }, grid: { color: '#f3f4f6' }, beginAtZero: true }
+                    }
+                }
+            });
+        })();
+
+        // ── Fig. 2: ZeRO Memory Savings ────────────────────────────────────────
+        (function () {
+            var zeroMemoryContext = document.getElementById('zeroMemoryChart').getContext('2d');
+            var zeroDP = [1, 2, 4, 8, 16, 32, 64];
+            var parameterCount = 7e9;
+            var vanillaDPMemory = zeroDP.map(function () { return (16 * parameterCount) / 1e9; });
+            var zero1Memory = zeroDP.map(function (numberOfRanks) { return (4 * parameterCount + 12 * parameterCount / numberOfRanks) / 1e9; });
+            var zero2Memory = zeroDP.map(function (numberOfRanks) { return (2 * parameterCount + (2 + 12) * parameterCount / numberOfRanks) / 1e9; });
+            var zero3Memory = zeroDP.map(function (numberOfRanks) { return (16 * parameterCount / numberOfRanks) / 1e9; });
+
+            new Chart(zeroMemoryContext, {
+                type: 'line',
+                data: {
+                    labels: zeroDP,
+                    datasets: [
+                        { label: 'Vanilla DP', data: vanillaDPMemory, borderColor: '#ef4444', borderWidth: 2, pointRadius: 3, fill: false },
+                        { label: 'ZeRO-1', data: zero1Memory, borderColor: '#f59e0b', borderWidth: 2, pointRadius: 3, fill: false },
+                        { label: 'ZeRO-2', data: zero2Memory, borderColor: '#10b981', borderWidth: 2, pointRadius: 3, fill: false },
+                        { label: 'ZeRO-3 (FSDP)', data: zero3Memory, borderColor: '#3b82f6', borderWidth: 2, pointRadius: 3, fill: false },
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (tooltipContext) { return ' ' + tooltipContext.dataset.label + ': ' + tooltipContext.raw.toFixed(1) + ' GB'; }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'DP degree (number of GPUs)' }, grid: { color: '#f3f4f6' } },
+                        y: { title: { display: true, text: 'Per-GPU model memory (GB)' }, grid: { color: '#f3f4f6' }, type: 'logarithmic' }
+                    }
+                }
+            });
+        })();
+
+        // ── Fig. 3: TP Scaling ─────────────────────────────────────────────────
+        var tpScalingChart;
+        var TP_DATA = {
+            labels: [1, 2, 4, 8, 16, 32],
+            tflopsValues: [312, 295, 270, 240, 137, 68],
+            colors: ['#3b82f6', '#3b82f6', '#3b82f6', '#3b82f6', '#ef4444', '#ef4444'],
+        };
+
+        function buildTPChart(scaleType) {
+            if (tpScalingChart) tpScalingChart.destroy();
+            var tpScalingContext = document.getElementById('tpScalingChart').getContext('2d');
+            tpScalingChart = new Chart(tpScalingContext, {
+                type: 'bar',
+                data: {
+                    labels: TP_DATA.labels.map(function (tensorParallelDegree) { return 'TP=' + tensorParallelDegree; }),
+                    datasets: [{
+                        label: 'Per-GPU TFLOPS (BF16)',
+                        data: TP_DATA.tflopsValues,
+                        backgroundColor: TP_DATA.colors.map(function (colorValue) { return colorValue + '33'; }),
+                        borderColor: TP_DATA.colors,
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: function (tooltipContext) { return ' ' + tooltipContext.raw + ' TFLOPS'; } } }
+                    },
+                    scales: {
+                        y: {
+                            type: scaleType,
+                            title: { display: true, text: 'Per-GPU TFLOPS' },
+                            grid: { color: '#f3f4f6' },
+                            ...(scaleType === 'logarithmic' ? { min: 10 } : { min: 0 }),
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function setTPScale(scaleValue) {
+            document.getElementById('tpLinearBtn').classList.toggle('active', scaleValue === 'linear');
+            document.getElementById('tpLogBtn').classList.toggle('active', scaleValue === 'log');
+            buildTPChart(scaleValue === 'log' ? 'logarithmic' : 'linear');
+        }
+
+        buildTPChart('linear');
+    </script>
+</body>
+</html>
