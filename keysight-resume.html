@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keysight Resume — Douglas Seo</title>
+    <meta name="description" content="Douglas Seo — Sales Engineer resume for Keysight Technologies, Los Angeles.">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Open Graph / social thumbnail -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://douglasseo.com/keysight-resume">
+    <meta property="og:title" content="Keysight Resume — Douglas Seo">
+    <meta property="og:description" content="Douglas Seo — Sales Engineer resume for Keysight Technologies, Los Angeles.">
+    <meta property="og:image" content="https://douglasseo.com/public/keysight/keysight-thumbnail.png">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://douglasseo.com/keysight-resume">
+    <meta name="twitter:title" content="Keysight Resume — Douglas Seo">
+    <meta name="twitter:description" content="Douglas Seo — Sales Engineer resume for Keysight Technologies, Los Angeles.">
+    <meta name="twitter:image" content="https://douglasseo.com/public/keysight/keysight-thumbnail.png">
+
+    <link rel="stylesheet" href="/public/css/keysight.css">
+</head>
+<body>
+    <div class="keysight-deck" id="keysightDeck">
+        <div class="deck-progress" id="deckProgress"></div>
+
+        <div class="pdf-slide-stage" id="pdfSlideStage">
+            <div class="pdf-slide-loading" id="pdfSlideLoading">Loading presentation…</div>
+            <canvas class="pdf-slide-canvas" id="pdfSlideCanvas" hidden></canvas>
+        </div>
+
+        <div class="deck-click-zone deck-click-zone--prev" aria-hidden="true"></div>
+        <div class="deck-click-zone deck-click-zone--next" aria-hidden="true"></div>
+
+        <div class="deck-controls">
+            <button class="deck-nav-btn" id="deckPrevBtn" aria-label="Previous slide" disabled>&#8592;</button>
+            <div>
+                <span class="deck-counter" id="deckCounter">—</span>
+                <span class="deck-hint">&nbsp;&middot;&nbsp; &larr; &rarr; navigate &middot; F fullscreen</span>
+            </div>
+            <button class="deck-nav-btn" id="deckNextBtn" aria-label="Next slide" disabled>&#8594;</button>
+        </div>
+
+        <div class="deck-overview" id="deckOverview" hidden></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>window.KEYSIGHT_PDF_SOURCE = '/public/DouglasSeo_SalesEngineer_Keysight_LosAngeles.pdf';</script>
+    <script src="/public/js/keysight-deck.js"></script>
+</body>
+</html>
