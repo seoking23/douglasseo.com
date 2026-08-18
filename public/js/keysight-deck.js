@@ -2,7 +2,7 @@
 (function () {
     'use strict';
 
-    const PDF_SOURCE_URL = '/public/keysight/KeysightAM.pdf';
+    const PDF_SOURCE_URL = window.KEYSIGHT_PDF_SOURCE || '/public/keysight/KeysightAM.pdf';
 
     const deckElement = document.getElementById('keysightDeck');
     const slideStageElement = document.getElementById('pdfSlideStage');
