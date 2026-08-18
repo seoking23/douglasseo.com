@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keysight Account Manager — Douglas Seo</title>
+    <meta name="description" content="Does Douglas Seo have the characteristics and potential to be a great Keysight Account Manager?">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="/public/css/keysight.css">
+</head>
+<body>
+    <div class="keysight-deck" id="keysightDeck">
+        <div class="deck-progress" id="deckProgress"></div>
+
+        <div class="pdf-slide-stage" id="pdfSlideStage">
+            <div class="pdf-slide-loading" id="pdfSlideLoading">Loading presentation…</div>
+            <canvas class="pdf-slide-canvas" id="pdfSlideCanvas" hidden></canvas>
+        </div>
+
+        <div class="deck-click-zone deck-click-zone--prev" aria-hidden="true"></div>
+        <div class="deck-click-zone deck-click-zone--next" aria-hidden="true"></div>
+
+        <div class="deck-controls">
+            <button class="deck-nav-btn" id="deckPrevBtn" aria-label="Previous slide" disabled>&#8592;</button>
+            <div>
+                <span class="deck-counter" id="deckCounter">—</span>
+                <span class="deck-hint">&nbsp;&middot;&nbsp; &larr; &rarr; navigate &middot; F fullscreen</span>
+            </div>
+            <button class="deck-nav-btn" id="deckNextBtn" aria-label="Next slide" disabled>&#8594;</button>
+        </div>
+
+        <div class="deck-overview" id="deckOverview" hidden></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="/public/js/keysight-deck.js"></script>
+</body>
+</html>
